@@ -1,0 +1,110 @@
+[
+  {
+    "id": "a7ae8376-1aa1-444e-ab33-b250416d40c9",
+    "name": "Master Admin",
+    "username": "superadmin",
+    "password": "$2b$10$OPaQ94m9aRmKnmTFaYusm.7aWQfhKzWWZnx3Br7Cq6wLlymmbJkam",
+    "email": null,
+    "role": "SUPER_ADMIN",
+    "section": null,
+    "zone": null,
+    "createdAt": "2026-01-23T07:08:29.609Z",
+    "updatedAt": "2026-01-23T07:08:29.609Z"
+  },
+  {
+    "id": "36d8d2b1-71ae-4db9-ab4d-b94ddd7e2b39",
+    "name": "System Moderator",
+    "username": "admin",
+    "password": "$2b$10$OPaQ94m9aRmKnmTFaYusm.7aWQfhKzWWZnx3Br7Cq6wLlymmbJkam",
+    "email": null,
+    "role": "MODERATOR",
+    "section": null,
+    "zone": null,
+    "createdAt": "2026-01-23T07:08:29.614Z",
+    "updatedAt": "2026-01-23T07:08:29.614Z"
+  },
+  {
+    "id": "0e8cabc3-7c24-4a9b-8602-0079e31117c0",
+    "name": "Deputy Commissioner I",
+    "username": "dc1",
+    "password": "$2b$10$OPaQ94m9aRmKnmTFaYusm.7aWQfhKzWWZnx3Br7Cq6wLlymmbJkam",
+    "email": null,
+    "role": "SECTION_OFFICER",
+    "section": "Deputy commissioner I",
+    "zone": null,
+    "createdAt": "2026-01-23T07:08:29.617Z",
+    "updatedAt": "2026-01-23T07:08:29.617Z"
+  },
+  {
+    "id": "19aa8a59-e703-474d-aafb-05d49eb9c11f",
+    "name": "Deputy Commissioner II",
+    "username": "dc2",
+    "password": "$2b$10$OPaQ94m9aRmKnmTFaYusm.7aWQfhKzWWZnx3Br7Cq6wLlymmbJkam",
+    "email": null,
+    "role": "SECTION_OFFICER",
+    "section": "Deputy commissioner II",
+    "zone": null,
+    "createdAt": "2026-01-23T07:08:29.620Z",
+    "updatedAt": "2026-01-23T07:08:29.620Z"
+  },
+  {
+    "id": "88002b60-b045-49a7-bba1-4c8a8bb43402",
+    "name": "Director Engineering",
+    "username": "eng",
+    "password": "$2b$10$OPaQ94m9aRmKnmTFaYusm.7aWQfhKzWWZnx3Br7Cq6wLlymmbJkam",
+    "email": null,
+    "role": "SECTION_OFFICER",
+    "section": "Director Engineering",
+    "zone": null,
+    "createdAt": "2026-01-23T07:08:29.622Z",
+    "updatedAt": "2026-01-23T07:08:29.622Z"
+  },
+  {
+    "id": "33ee0b09-4ffb-423b-816c-d923f7e3c118",
+    "name": "Director Finance",
+    "username": "fin",
+    "password": "$2b$10$OPaQ94m9aRmKnmTFaYusm.7aWQfhKzWWZnx3Br7Cq6wLlymmbJkam",
+    "email": null,
+    "role": "SECTION_OFFICER",
+    "section": "Director Finance",
+    "zone": null,
+    "createdAt": "2026-01-23T07:08:29.624Z",
+    "updatedAt": "2026-01-23T07:08:29.624Z"
+  },
+  {
+    "id": "576f5ca0-f44c-4a3c-80bb-34c644e21ab7",
+    "name": "Director Planning",
+    "username": "plan",
+    "password": "$2b$10$OPaQ94m9aRmKnmTFaYusm.7aWQfhKzWWZnx3Br7Cq6wLlymmbJkam",
+    "email": null,
+    "role": "SECTION_OFFICER",
+    "section": "Director Planning",
+    "zone": null,
+    "createdAt": "2026-01-23T07:08:29.627Z",
+    "updatedAt": "2026-01-23T07:08:29.627Z"
+  },
+  {
+    "id": "abe920a5-d642-4480-976a-67e1fa290459",
+    "name": "Director Legal",
+    "username": "legal",
+    "password": "$2b$10$OPaQ94m9aRmKnmTFaYusm.7aWQfhKzWWZnx3Br7Cq6wLlymmbJkam",
+    "email": null,
+    "role": "SECTION_OFFICER",
+    "section": "Director legal",
+    "zone": null,
+    "createdAt": "2026-01-23T07:08:29.629Z",
+    "updatedAt": "2026-01-23T07:08:29.629Z"
+  },
+  {
+    "id": "dd2f7003-ca34-4a3b-9912-5c33dab93332",
+    "name": "Data Entry Operator",
+    "username": "operator",
+    "password": "$2b$10$OPaQ94m9aRmKnmTFaYusm.7aWQfhKzWWZnx3Br7Cq6wLlymmbJkam",
+    "email": null,
+    "role": "OPERATOR",
+    "section": null,
+    "zone": null,
+    "createdAt": "2026-01-23T07:08:29.632Z",
+    "updatedAt": "2026-01-23T07:08:29.632Z"
+  }
+]

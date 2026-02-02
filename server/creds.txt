@@ -1,0 +1,23 @@
+| Zone Name | Username | Password |
+|---|---|---|
+| CRF | ee_crf | kda123 |
+| Electricity | ee_electricity | kda123 |
+| Headquarter | ee_headquarter | kda123 |
+| Horticulture/ ABD | ee_horticulture_abd | kda123 |
+| Housing | ee_housing | kda123 |
+| I-A | ee_i_a | kda123 |
+| I-B | ee_i_b | kda123 |
+| I-C | ee_i_c | kda123 |
+| I-D | ee_i_d | kda123 |
+| II-A | ee_ii_a | kda123 |
+| II-B | ee_ii_b | kda123 |
+| III-A | ee_iii_a | kda123 |
+| III-B | ee_iii_b | kda123 |
+| III-C | ee_iii_c | kda123 |
+| III-D | ee_iii_d | kda123 |
+| IV-A | ee_iv_a | kda123 |
+| IV-B | ee_iv_b | kda123 |
+| IV-C | ee_iv_c | kda123 |
+| Sewerage | ee_sewerage | kda123 |
+| Water - I | ee_water__i | kda123 |
+| Water - II | ee_water__ii | kda123 |

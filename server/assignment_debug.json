@@ -1,0 +1,58 @@
+[
+  {
+    "id": "KDA-2026-3123",
+    "section": "Director Engineering",
+    "zone": "CRF",
+    "officer": "EE - CRF",
+    "status": "IN_PROGRESS",
+    "subStatus": "EE_SUBMITTED"
+  },
+  {
+    "id": "KDA-2026-6637",
+    "section": "Director Engineering",
+    "zone": "Housing",
+    "officer": "EE - Housing",
+    "status": "IN_PROGRESS",
+    "subStatus": "ASSIGNED_TO_EE"
+  },
+  {
+    "id": "KDA-2026-5074",
+    "section": "Director Engineering",
+    "zone": "CRF",
+    "officer": "EE - CRF",
+    "status": "IN_PROGRESS",
+    "subStatus": "EE_RETURNED"
+  },
+  {
+    "id": "KDA-2026-9342",
+    "section": "Director Engineering",
+    "zone": "Horticulture/ ABD",
+    "officer": "EE - Horticulture/ ABD",
+    "status": "IN_PROGRESS",
+    "subStatus": "ASSIGNED_TO_EE"
+  },
+  {
+    "id": "KDA-2026-7284",
+    "section": "Director Engineering",
+    "zone": "",
+    "officer": "",
+    "status": "REJECTED",
+    "subStatus": null
+  },
+  {
+    "id": "KDA-2026-8426",
+    "section": "Director Engineering",
+    "zone": "Horticulture/ ABD",
+    "officer": "EE - Horticulture/ ABD",
+    "status": "IN_PROGRESS",
+    "subStatus": "ASSIGNED_TO_EE"
+  },
+  {
+    "id": "KDA-2026-4287",
+    "section": "Director Engineering",
+    "zone": "Housing",
+    "officer": "",
+    "status": "IN_PROGRESS",
+    "subStatus": "ASSIGNED_TO_EE"
+  }
+]
