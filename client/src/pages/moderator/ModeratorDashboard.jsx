@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, CheckCircle, Clock, AlertTriangle, Video, Paperclip, Trash2, XCircle, Activity, AlertCircle, ChevronLeft, ChevronRight, ChevronsRight, Search, Settings, Printer, CornerDownLeft, Flag } from 'lucide-react';
+import { FileText, CheckCircle, Clock, AlertTriangle, Video, Paperclip, Trash2, XCircle, Activity, AlertCircle, ChevronLeft, ChevronRight, ChevronsRight, Search, Settings, Printer, CornerDownLeft, Flag, ShieldAlert } from 'lucide-react';
 import GrievanceDetailsModal from '../../components/dashboard/GrievanceDetailsModal';
 import ManageGrievanceModal from '../../components/dashboard/ManageGrievanceModal';
 import DailyReportModal from '../../components/dashboard/DailyReportModal';
@@ -40,9 +40,18 @@ const ModeratorDashboard = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [showDailyReportModal, setShowDailyReportModal] = useState(false);
 
+    // Helper to get token
+    const getToken = () => {
+        const stored = localStorage.getItem('kda_user');
+        return stored ? JSON.parse(stored).token : null;
+    };
+
     const fetchGrievances = async () => {
         try {
-            const response = await fetch('http://localhost:3000/api/grievances');
+            const token = getToken();
+            const response = await fetch('http://localhost:3000/api/grievances', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             const data = await response.json();
             if (data.success) {
                 setGrievances(data.data);
@@ -88,6 +97,14 @@ const ModeratorDashboard = () => {
                 body = JSON.stringify(updates);
             }
 
+            const token = getToken();
+            if (!headers['Content-Type']) {
+                // If no Content-Type (FormData), only add Auth
+                headers['Authorization'] = `Bearer ${token}`;
+            } else {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             const response = await fetch(`http://localhost:3000/api/grievances/${grievance.id}`, {
                 method: 'PUT',
                 headers: headers,
@@ -129,6 +146,7 @@ const ModeratorDashboard = () => {
             case 'ESCALATED': return 'bg-red-100 text-red-700';
             case 'ACCEPTED': return 'bg-blue-100 text-blue-700';
             case 'REJECTED': return 'bg-gray-100 text-gray-700';
+            case 'UNSATISFIED': return 'bg-rose-100 text-rose-700';
             default: return 'bg-gray-100 text-gray-700';
         }
     };
@@ -155,7 +173,9 @@ const ModeratorDashboard = () => {
             ? true
             : activeTab === 'IN_PROGRESS'
                 ? (g.status === 'IN_PROGRESS' || g.status === 'ACCEPTED')
-                : g.status === activeTab;
+                : activeTab === 'UNSATISFIED'
+                    ? (g.status === 'UNSATISFIED' || g.satisfactionStatus === 'NOT_SATISFIED')
+                    : g.status === activeTab;
         const matchesSource = sourceFilter === 'ALL' || g.source === sourceFilter;
         const lowerSearch = searchTerm.toLowerCase();
         const matchesSearch =
@@ -230,6 +250,14 @@ const ModeratorDashboard = () => {
                     color="bg-red-500"
                     onClick={() => { setActiveTab('ESCALATED'); setCurrentPage(1); }}
                     isActive={activeTab === 'ESCALATED'}
+                />
+                <StatCard
+                    title="Unsatisfied"
+                    value={grievances.filter(g => g.status === 'UNSATISFIED' || g.satisfactionStatus === 'NOT_SATISFIED').length}
+                    icon={ShieldAlert}
+                    color="bg-rose-600"
+                    onClick={() => { setActiveTab('UNSATISFIED'); setCurrentPage(1); }}
+                    isActive={activeTab === 'UNSATISFIED'}
                 />
             </div>
 

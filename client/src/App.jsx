@@ -10,6 +10,7 @@ import MockWhatsApp from './components/layout/MockWhatsApp';
 import { AuthProvider } from './context/AuthContext';
 import LoginPage from './pages/auth/LoginPage';
 import ProtectedRoute from './components/layout/ProtectedRoute';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 import OfficerDashboard from './pages/officer/OfficerDashboard';
 import { useAuth } from './context/AuthContext';
@@ -28,8 +29,16 @@ import CommissionerDashboard from './pages/commissioner/CommissionerDashboard';
 const DashboardRouter = () => {
   const { user, loading } = useAuth();
 
-  if (loading) return null;
-  if (!user) return null;
+  if (loading) {
+    console.log('DashboardRouter: Loading...');
+    return null;
+  }
+  if (!user) {
+    console.log('DashboardRouter: No user');
+    return null;
+  }
+
+  console.log('DashboardRouter: User Role:', user.role);
 
   if (user.role === 'COMMISSIONER') return <CommissionerDashboard />;
   if (user.role === 'SECTION_OFFICER') return <OfficerDashboard />;
@@ -39,9 +48,15 @@ const DashboardRouter = () => {
     'REVENUE_OFFICIAL',
     'PLANNING_OFFICIAL',
     'LEGAL_OFFICIAL',
-    'FINANCE_OFFICIAL'
-  ].includes(user.role)) return <SubOfficialDashboard />;
+    'FINANCE_OFFICIAL',
+    'DIRECTOR'
+  ].includes(user.role)) {
+    console.log('DashboardRouter: Rendering SubOfficialDashboard');
+    return <SubOfficialDashboard />;
+  }
   if (user.role === 'SUPER_ADMIN') return <UserManagementPage />;
+
+  console.log('DashboardRouter: Defaulting to ModeratorDashboard');
   return <ModeratorDashboard />;
 };
 
@@ -64,9 +79,9 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={[
             'MODERATOR', 'SECTION_OFFICER', 'OPERATOR', 'SUPER_ADMIN',
             'EXECUTIVE_ENGINEER', 'REVENUE_OFFICIAL', 'PLANNING_OFFICIAL',
-            'LEGAL_OFFICIAL', 'FINANCE_OFFICIAL', 'COMMISSIONER'
+            'LEGAL_OFFICIAL', 'FINANCE_OFFICIAL', 'COMMISSIONER', 'DIRECTOR'
           ]} />}>
-            <Route path="/dashboard" element={<DashboardLayout><Outlet /></DashboardLayout>}>
+            <Route path="/dashboard" element={<ErrorBoundary><DashboardLayout><Outlet /></DashboardLayout></ErrorBoundary>}>
               <Route index element={<DashboardRouter />} />
               <Route path="grievances" element={<GrievancesPage />} />
 

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import GrievanceDetailsModal from '../../components/dashboard/GrievanceDetailsModal';
+import { sendMockWhatsApp } from '../../components/layout/MockWhatsApp';
 
 // Enhanced Clickable Stat Card with Active State
 const StatCard = ({ title, value, color, icon: Icon, onClick, isActive }) => (
@@ -33,6 +34,7 @@ const StatCard = ({ title, value, color, icon: Icon, onClick, isActive }) => (
 
 const SubOfficialDashboard = () => {
     const { user } = useAuth();
+    console.log('SubOfficialDashboard: Mounting for user:', user);
     const [grievances, setGrievances] = useState([]);
     const [selectedGrievance, setSelectedGrievance] = useState(null);
     const [selectedDetailsGrievance, setSelectedDetailsGrievance] = useState(null);
@@ -41,21 +43,45 @@ const SubOfficialDashboard = () => {
     const [actionType, setActionType] = useState('REPLY'); // 'REPLY' or 'RETURN'
     const [activeTab, setActiveTab] = useState('PENDING'); // 'ALL', 'PENDING', 'PROCESSED'
 
+    // Helper to get token
+    const getToken = () => {
+        const stored = localStorage.getItem('kda_user');
+        return stored ? JSON.parse(stored).token : null;
+    };
+
     const fetchGrievances = async () => {
         try {
-            const response = await fetch('http://localhost:3000/api/grievances');
+            const token = getToken();
+            const response = await fetch('http://localhost:3000/api/grievances', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             const data = await response.json();
 
             if (data.success) {
-                // Filter by the zone/desk name assigned to this user
-                const filtered = data.data.filter(g =>
-                    (user.zone && g.assignedZone === user.zone) ||
-                    (user.section && g.assignedSection === user.section)
-                ).sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+                console.log(`[SubDashboard] Received ${data.data.length} total grievances. Filtering for:`, { role: user.role, zone: user.zone, section: user.section });
+
+                const filtered = data.data.filter(g => {
+                    const userZone = (user.zone || '').trim().toLowerCase();
+                    const grievanceZone = (g.assignedZone || '').trim().toLowerCase();
+                    const userSection = (user.section || '').trim().toLowerCase();
+                    const grievanceSection = (g.assignedSection || '').trim().toLowerCase();
+
+                    // 1. Zone Match (Primary for sub-officials)
+                    const zoneMatch = userZone && grievanceZone === userZone;
+
+                    // 2. Section Match (Fallback if user has no specific zone, or if grievance is just assigned to section)
+                    const sectionMatch = (!userZone && userSection) ? grievanceSection === userSection : false;
+
+                    const isAssignedToSub = ['ASSIGNED_TO_SUB', 'ASSIGNED_TO_EE', 'SUB_SUBMITTED', 'SUB_RETURNED'].includes(g.subStatus);
+
+                    return (zoneMatch || sectionMatch) && isAssignedToSub;
+                }).sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+
+                console.log(`[SubDashboard] Filter complete. Found ${filtered.length} tasks.`);
                 setGrievances(filtered);
             }
         } catch (err) {
-            console.error('Failed to fetch:', err);
+            console.error('[SubDashboard] Failed to fetch:', err);
         }
     };
 
@@ -69,8 +95,8 @@ const SubOfficialDashboard = () => {
         try {
             const formData = new FormData();
             formData.append('eeRemarks', remarks);
-            formData.append('eeStatus', actionType === 'RETURN' ? 'RETURNED' : 'REPLIED');
-            formData.append('subStatus', actionType === 'RETURN' ? 'SUB_RETURNED' : 'SUB_SUBMITTED');
+            formData.append('eeStatus', actionType === 'RETURN' ? 'RETURNED' : (actionType === 'RESOLVE' ? 'RESOLVED' : 'REPLIED'));
+            formData.append('subStatus', actionType === 'RETURN' ? 'SUB_RETURNED' : (actionType === 'RESOLVE' ? 'SUB_RESOLVED' : 'SUB_SUBMITTED'));
             formData.append('performedBy', user.name);
 
             if (file) {
@@ -80,17 +106,24 @@ const SubOfficialDashboard = () => {
             // If returning, set status back to PENDING so it appears in Officer's pending list
             if (actionType === 'RETURN') {
                 formData.append('status', 'PENDING');
+            } else if (actionType === 'RESOLVE') {
+                formData.append('status', 'RESOLVED');
             }
 
+            const token = getToken();
             const response = await fetch(`http://localhost:3000/api/grievances/${selectedGrievance.id}`, {
                 method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` },
                 body: formData
             });
 
             const data = await response.json();
 
             if (data.success) {
-                alert(`Grievance ${actionType === 'RETURN' ? 'returned' : 'replied'} successfully.`);
+                if (actionType === 'RESOLVE') {
+                    sendMockWhatsApp(`RESOLVED_PROMPT:::${selectedGrievance.id}:::${selectedGrievance.grievanceId}:::${remarks}`);
+                }
+                alert(`Grievance ${actionType === 'RETURN' ? 'returned' : (actionType === 'RESOLVE' ? 'resolved' : 'replied')} successfully.`);
                 setRemarks('');
                 setFile(null);
                 setSelectedGrievance(null);
@@ -102,7 +135,10 @@ const SubOfficialDashboard = () => {
     };
 
     // Derived Lists
-    const pendingTasks = grievances.filter(g => !g.eeStatus || g.eeStatus === 'PENDING' || g.eeStatus === 'ACCEPTED');
+    const pendingTasks = grievances.filter(g =>
+        (g.status !== 'RESOLVED' && g.status !== 'REJECTED' && g.status !== 'UNSATISFIED') &&
+        (!g.eeStatus || g.eeStatus === 'PENDING' || g.eeStatus === 'ACCEPTED')
+    );
     const completedTasks = grievances.filter(g => g.eeStatus === 'REPLIED' || g.eeStatus === 'RETURNED');
 
     // Filtered grievances based on active tab
@@ -235,6 +271,23 @@ const SubOfficialDashboard = () => {
                                                     )}
                                                 </div>
                                             )}
+                                            {/* Video Links */}
+                                            {g.hearingLink && g.status !== 'RESOLVED' && g.status !== 'REJECTED' && (
+                                                <div className="flex items-center space-x-2 mt-1">
+                                                    <span className="text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-black border border-orange-200">
+                                                        HEARING: {g.hearingDate}
+                                                    </span>
+                                                    <a href={g.hearingLink} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 underline font-black hover:text-blue-800">JOIN VC</a>
+                                                </div>
+                                            )}
+                                            {g.vcMeetingLink && !['SATISFIED_POST_VC_SO', 'CLOSED_HIGHER_W_VC'].includes(g.satisfactionStatus) && (
+                                                <div className="flex items-center space-x-2 mt-1">
+                                                    <span className="text-[9px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-black border border-indigo-200">
+                                                        SAT-VC: {new Date(g.vcScheduledDate).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                                                    </span>
+                                                    <a href={g.vcMeetingLink} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 underline font-black hover:text-blue-800">JOIN</a>
+                                                </div>
+                                            )}
                                             {g.directorNote && (
                                                 <div className="mt-2 bg-yellow-50 text-yellow-800 p-2 rounded text-xs border border-yellow-100">
                                                     <strong>Authority Instruction:</strong> {g.directorNote}
@@ -284,28 +337,34 @@ const SubOfficialDashboard = () => {
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => setActionType('REPLY')}
-                                        className={`flex-1 py-2 text-sm font-bold rounded-lg border ${actionType === 'REPLY' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200'}`}
+                                        className={`flex-1 py-1 px-1 text-[10px] font-bold rounded-lg border ${actionType === 'REPLY' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200'}`}
                                     >
-                                        Submit Report
+                                        Report
+                                    </button>
+                                    <button
+                                        onClick={() => setActionType('RESOLVE')}
+                                        className={`flex-1 py-1 px-1 text-[10px] font-bold rounded-lg border ${actionType === 'RESOLVE' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-600 border-gray-200'}`}
+                                    >
+                                        Resolve
                                     </button>
                                     <button
                                         onClick={() => setActionType('RETURN')}
-                                        className={`flex-1 py-2 text-sm font-bold rounded-lg border ${actionType === 'RETURN' ? 'bg-red-600 text-white border-red-600' : 'bg-white text-gray-600 border-gray-200'}`}
+                                        className={`flex-1 py-1 px-1 text-[10px] font-bold rounded-lg border ${actionType === 'RETURN' ? 'bg-red-600 text-white border-red-600' : 'bg-white text-gray-600 border-gray-200'}`}
                                     >
-                                        Return Case
+                                        Return
                                     </button>
                                 </div>
 
                                 <div>
                                     <label className="text-xs font-bold text-gray-500 mb-1 block">
-                                        {actionType === 'REPLY' ? 'Findings / Action Taken' : 'Reason for Return'}
+                                        {actionType === 'REPLY' ? 'Findings / Action Taken' : (actionType === 'RESOLVE' ? 'Resolution Report' : 'Reason for Return')}
                                     </label>
                                     <textarea
                                         value={remarks}
                                         onChange={(e) => setRemarks(e.target.value)}
                                         rows="4"
                                         className="w-full p-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                                        placeholder={actionType === 'REPLY' ? "Enter report details..." : "Why are you returning this case?"}
+                                        placeholder={actionType === 'REPLY' ? "Enter report details..." : (actionType === 'RESOLVE' ? "Describe how it was resolved..." : "Why are you returning this case?")}
                                     ></textarea>
                                 </div>
 
@@ -325,7 +384,7 @@ const SubOfficialDashboard = () => {
                                     onClick={handleSubmit}
                                     className="w-full py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition flex items-center justify-center gap-2"
                                 >
-                                    <Send className="w-4 h-4" /> Submit to Authroity
+                                    <Send className="w-4 h-4" /> Submit to Authority
                                 </button>
                             </div>
                         </div>

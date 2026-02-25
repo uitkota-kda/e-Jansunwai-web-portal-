@@ -75,7 +75,12 @@ const AssignZoneModal = ({ grievance, onClose, onAssign }) => {
         const fetchOfficials = async () => {
             if (!config.role) return;
             try {
-                const response = await fetch(`http://localhost:3000/api/users/role/${config.role}`);
+                const tokenData = localStorage.getItem('kda_user');
+                const token = tokenData ? JSON.parse(tokenData).token : null;
+
+                const response = await fetch(`http://localhost:3000/api/users/role/${config.role}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 const result = await response.json();
                 if (result.success) {
                     setOfficials(result.data);

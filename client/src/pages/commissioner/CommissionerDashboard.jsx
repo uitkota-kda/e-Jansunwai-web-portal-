@@ -9,6 +9,7 @@ import {
     PieChart, Pie, Cell, BarChart, Bar, Legend, AreaChart, Area
 } from 'recharts';
 import GrievanceDetailsModal from '../../components/dashboard/GrievanceDetailsModal';
+import { sendMockWhatsApp } from '../../components/layout/MockWhatsApp';
 import ManageGrievanceModal from '../../components/dashboard/ManageGrievanceModal'; // Ensure this can handle reopening or create new one
 
 
@@ -16,6 +17,13 @@ const COLORS = ['#2563eb', '#7c3aed', '#db2777', '#ea580c', '#16a34a', '#8b5cf6'
 
 const CommissionerDashboard = () => {
     const { user } = useAuth();
+
+    // Helper to get token
+    const getToken = () => {
+        const stored = localStorage.getItem('kda_user');
+        return stored ? JSON.parse(stored).token : null;
+    };
+
     const [grievances, setGrievances] = useState([]);
     const [activeTab, setActiveTab] = useState('ALL'); // ALL, PENDING, OVERDUE, RESOLVED, REOPENED
     const [timeFilter, setTimeFilter] = useState('ALL'); // ALL, 7, 15, 30, 90 (3mo), 150 (5mo), CUSTOM
@@ -70,10 +78,21 @@ const CommissionerDashboard = () => {
 
     const fetchData = async () => {
         try {
-            const response = await fetch('http://localhost:3000/api/grievances');
+            const token = getToken();
+            console.log('Fetching Commissioner Data with token:', token ? 'Present' : 'Missing');
+
+            const response = await fetch('http://localhost:3000/api/grievances', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             const data = await response.json();
+            console.log('Commissioner Data Response:', data);
+
             if (data.success) {
-                setGrievances(data.data);
+                // Commissioner sees EVERYTHING, but exclude drafts if any
+                // Also default to sorting by newest
+                setGrievances(data.data.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt)));
+            } else {
+                console.error('Failed to load Commissioner data:', data.message);
             }
         } catch (err) {
             console.error('Failed to fetch data:', err);
@@ -88,9 +107,13 @@ const CommissionerDashboard = () => {
         if (!reopenTarget || !reopenReason) return;
 
         try {
+            const token = getToken();
             const response = await fetch(`http://localhost:3000/api/grievances/${reopenTarget.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     status: 'PENDING', // Send back to pending queue
                     subStatus: 'REOPENED_BY_COMMISSIONER', // Flag for system
@@ -141,7 +164,7 @@ const CommissionerDashboard = () => {
             if (activeTab === 'RESOLVED') matchesTab = g.status === 'RESOLVED';
             if (activeTab === 'REJECTED') matchesTab = g.status === 'REJECTED';
             if (activeTab === 'ESCALATED') matchesTab = g.status === 'ESCALATED';
-            if (activeTab === 'ESCALATED_FEEDBACK') matchesTab = g.satisfactionStatus === 'NOT_SATISFIED_POST_VC_SO' || g.satisfactionStatus === 'VC_SCHEDULED_COMMISSIONER';
+            if (activeTab === 'ESCALATED_FEEDBACK') matchesTab = g.status === 'UNSATISFIED' || g.satisfactionStatus === 'NOT_SATISFIED_POST_VC_SO' || g.satisfactionStatus === 'VC_SCHEDULED_COMMISSIONER';
             if (activeTab === 'REOPENED') matchesTab = !!g.isReopened;
             if (activeTab === 'OVERDUE') {
                 const created = g.createdAt ? new Date(g.createdAt) : new Date();
@@ -595,7 +618,7 @@ const CommissionerDashboard = () => {
         resolved: grievances.filter(g => g.status === 'RESOLVED').length,
         rejected: grievances.filter(g => g.status === 'REJECTED').length,
         escalated: grievances.filter(g => g.status === 'ESCALATED').length,
-        escalatedFeedback: grievances.filter(g => g.satisfactionStatus === 'NOT_SATISFIED_POST_VC_SO').length,
+        escalatedFeedback: grievances.filter(g => g.status === 'UNSATISFIED' || g.satisfactionStatus === 'NOT_SATISFIED_POST_VC_SO').length,
         reopened: grievances.filter(g => !!g.isReopened).length,
         overdue: grievances.filter(g => {
             const created = g.createdAt ? new Date(g.createdAt) : new Date();
@@ -1047,7 +1070,8 @@ const CommissionerDashboard = () => {
                                                 ${g.status === 'PENDING' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
                                                                     g.status === 'RESOLVED' ? 'bg-green-100 text-green-700 border border-green-200' :
                                                                         g.status === 'REJECTED' ? 'bg-red-100 text-red-700 border border-red-200' :
-                                                                            'bg-blue-100 text-blue-700 border border-blue-200'}`}>
+                                                                            g.status === 'UNSATISFIED' ? 'bg-rose-100 text-rose-700 border border-rose-200' :
+                                                                                'bg-blue-100 text-blue-700 border border-blue-200'}`}>
                                                                 {g.status}
                                                             </span>
                                                             {g.status !== 'RESOLVED' && g.status !== 'REJECTED' && (
@@ -1058,8 +1082,25 @@ const CommissionerDashboard = () => {
                                                                     </p>
                                                                 </div>
                                                             )}
+                                                            {/* Video Links */}
+                                                            {g.hearingLink && g.status !== 'RESOLVED' && g.status !== 'REJECTED' && (
+                                                                <div className="flex items-center space-x-2 mt-1">
+                                                                    <span className="text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-black border border-orange-200">
+                                                                        HEARING: {g.hearingDate}
+                                                                    </span>
+                                                                    <a href={g.hearingLink} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 underline font-black">JOIN</a>
+                                                                </div>
+                                                            )}
+                                                            {g.vcMeetingLink && !['SATISFIED_POST_VC_SO', 'CLOSED_HIGHER_W_VC'].includes(g.satisfactionStatus) && (
+                                                                <div className="flex items-center space-x-2 mt-1">
+                                                                    <span className="text-[9px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-black border border-indigo-200">
+                                                                        SAT-VC
+                                                                    </span>
+                                                                    <a href={g.vcMeetingLink} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 underline font-black">JOIN</a>
+                                                                </div>
+                                                            )}
                                                             {/* Feedback Alerts */}
-                                                            {g.satisfactionStatus === 'NOT_SATISFIED_POST_VC_SO' && (
+                                                            {g.satisfactionStatus === 'NOT_SATISFIED_POST_VC_SO' && ['WHATSAPP', 'WEB_PORTAL'].includes(g.source || 'WEB_PORTAL') && (
                                                                 <div className="mt-2 bg-rose-50 border border-rose-100 p-1.5 rounded text-center">
                                                                     <p className="text-[9px] font-black text-rose-700 uppercase">⚠️ CITIZEN NOT SATISFIED AFTER OFFICER VC</p>
                                                                     <button
@@ -1067,14 +1108,18 @@ const CommissionerDashboard = () => {
                                                                             e.stopPropagation();
                                                                             const date = prompt("Enter Commissioner VC Date (YYYY-MM-DD HH:MM):", new Date().toISOString().slice(0, 16).replace('T', ' '));
                                                                             if (date) {
-                                                                                const meetingLink = `https://meet.jit.si/KDA-CMS-${g.grievanceId}`;
-                                                                                await fetch(`http://localhost:3000/api/grievances/${g.id}/schedule-vc`, {
+                                                                                const meetingLink = `${window.location.origin}/hearing/COM-VC-${g.grievanceId}`;
+                                                                                const res = await fetch(`http://localhost:3000/api/grievances/${g.id}/schedule-vc`, {
                                                                                     method: 'POST',
                                                                                     headers: { 'Content-Type': 'application/json' },
                                                                                     body: JSON.stringify({ date, link: meetingLink, level: 'COMMISSIONER' })
                                                                                 });
-                                                                                alert("VC Scheduled");
-                                                                                fetchData();
+                                                                                const data = await res.json();
+                                                                                if (data.success) {
+                                                                                    sendMockWhatsApp(`VC_SCHEDULED:::${g.grievanceId}:::${date}:::${meetingLink}`);
+                                                                                    alert("Final VC Scheduled & Citizen Notified");
+                                                                                    fetchData();
+                                                                                }
                                                                             }
                                                                         }}
                                                                         className="mt-1 w-full bg-rose-600 text-white text-[9px] font-bold py-1 rounded hover:bg-rose-700"

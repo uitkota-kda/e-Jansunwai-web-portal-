@@ -17,13 +17,14 @@ async function main() {
         { username: 'plan', password: hashedPassword, name: 'Director Planning', role: 'SECTION_OFFICER', section: 'Director Planning' },
         { username: 'legal', password: hashedPassword, name: 'Director Legal', role: 'SECTION_OFFICER', section: 'Director legal' },
         // Revenue Users
-        { username: 'tdr_zone1', password: hashedPassword, name: 'TDR Zone 1', role: 'SECTION_OFFICER', section: 'Revenue', zone: 'Zone 1' },
-        { username: 'aao_revenue', password: hashedPassword, name: 'AAO Revenue', role: 'SECTION_OFFICER', section: 'Revenue', zone: 'Revenue Desk' },
+        { username: 'tdr_zone1', password: hashedPassword, name: 'TDR Zone 1', role: 'REVENUE_OFFICIAL', section: 'Revenue', zone: 'TDR Zone 1' },
+        { username: 'aao_revenue', password: hashedPassword, name: 'AAO Revenue', role: 'REVENUE_OFFICIAL', section: 'Revenue', zone: 'AAO- Kota South' },
         // Zone Users (Executive Engineers)
         { username: 'ee_housing', password: hashedPassword, name: 'Ex. En. Housing', role: 'EXECUTIVE_ENGINEER', zone: 'Housing' },
         { username: 'ee_crf', password: hashedPassword, name: 'Ex. En. CRF', role: 'EXECUTIVE_ENGINEER', zone: 'CRF' },
 
-        { username: 'operator', password: hashedPassword, name: 'Data Entry Operator', role: 'OPERATOR' }
+        { username: 'operator', password: hashedPassword, name: 'Data Entry Operator', role: 'OPERATOR' },
+        { username: 'commissioner', password: hashedPassword, name: 'Commissioner KDA', role: 'COMMISSIONER' }
     ];
 
     for (const u of users) {
@@ -33,7 +34,8 @@ async function main() {
                 password: u.password,
                 name: u.name,
                 role: u.role,
-                section: u.section || null
+                section: u.section || null,
+                zone: u.zone || null
             },
             create: u
         });

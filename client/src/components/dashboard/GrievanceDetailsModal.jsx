@@ -315,8 +315,8 @@ const GrievanceDetailsModal = ({ grievance, onClose }) => {
                             </div>
                         )}
 
-                        {/* Video Hearing Details */}
-                        {grievance.hearingLink && (
+                        {/* Video Hearing Details (Regular) */}
+                        {grievance.hearingLink && grievance.status !== 'RESOLVED' && grievance.status !== 'REJECTED' && (
                             <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
                                 <h4 className="text-sm font-bold text-orange-800 mb-3 flex items-center">
                                     <Video className="w-4 h-4 mr-2" /> Scheduled Video Hearing
@@ -341,6 +341,36 @@ const GrievanceDetailsModal = ({ grievance, onClose }) => {
                                         className="flex items-center justify-center w-full py-2 bg-orange-600 text-white rounded-lg font-bold hover:bg-orange-700 transition"
                                     >
                                         Join Hearing Now
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Satisfaction VC Details */}
+                        {grievance.vcMeetingLink && !['VC_DONE_SO', 'VC_DONE_COMMISSIONER', 'SATISFIED_POST_VC_SO', 'NOT_SATISFIED_POST_VC_SO', 'CLOSED_HIGHER_W_VC'].includes(grievance.satisfactionStatus) && (
+                            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                                <h4 className="text-sm font-bold text-blue-800 mb-3 flex items-center">
+                                    <Video className="w-4 h-4 mr-2" /> Scheduled Satisfaction VC
+                                </h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-xs text-blue-600 font-semibold uppercase">Date & Time</p>
+                                        <p className="text-sm font-bold text-gray-900">{new Date(grievance.vcScheduledDate).toLocaleString()}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-xs text-blue-600 font-semibold uppercase mb-1">Platform</p>
+                                        <p className="text-xs font-bold text-gray-500">Video Call</p>
+                                    </div>
+                                </div>
+                                <div className="mt-3 pt-3 border-t border-blue-200">
+                                    <button
+                                        onClick={() => {
+                                            window.open(grievance.vcMeetingLink, '_blank');
+                                            onClose();
+                                        }}
+                                        className="flex items-center justify-center w-full py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition"
+                                    >
+                                        Join Satisfaction VC Now
                                     </button>
                                 </div>
                             </div>

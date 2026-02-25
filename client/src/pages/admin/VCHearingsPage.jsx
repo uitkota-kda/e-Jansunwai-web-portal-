@@ -9,7 +9,12 @@ const VCHearingsPage = () => {
     const [hearings, setHearings] = useState([]);
 
     React.useEffect(() => {
-        fetch('http://localhost:3000/api/grievances')
+        const tokenData = localStorage.getItem('kda_user');
+        const token = tokenData ? JSON.parse(tokenData).token : null;
+
+        fetch('http://localhost:3000/api/grievances', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
@@ -47,7 +52,7 @@ const VCHearingsPage = () => {
                         <Video className="w-5 h-5 mr-2 text-kota-500" /> Upcoming Sessions
                     </h3>
                     <div className="space-y-4">
-                        {hearings.filter(h => h.hearingLink).map(hearing => (
+                        {hearings.filter(h => h.hearingLink && h.status !== 'RESOLVED' && h.status !== 'REJECTED').map(hearing => (
                             <div key={hearing.id} className="p-4 border border-gray-100 rounded-lg hover:border-kota-200 transition-colors bg-gray-50">
                                 <div className="flex justify-between items-start mb-2">
                                     <div>

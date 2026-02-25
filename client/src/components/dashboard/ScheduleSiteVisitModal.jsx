@@ -38,9 +38,15 @@ const ScheduleSiteVisitModal = ({ isOpen, onClose, grievances, initialGrievance,
             const grievance = grievances.find(g => g.grievanceId === selectedId);
             if (!grievance) throw new Error('Selected grievance not found in list');
 
+            const tokenData = localStorage.getItem('kda_user');
+            const token = tokenData ? JSON.parse(tokenData).token : null;
+
             const response = await fetch(`http://localhost:3000/api/grievances/${grievance.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     status: 'IN_PROGRESS',
                     remarks: `SITE VISIT SCHEDULED: ${visitDate} at ${visitTime}. ${remarks}`,

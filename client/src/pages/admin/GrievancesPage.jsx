@@ -13,10 +13,19 @@ const GrievancesPage = () => {
     const [selectedGrievance, setSelectedGrievance] = useState(null);
     const [selectedManageGrievance, setSelectedManageGrievance] = useState(null);
 
+    // Helper to get token
+    const getToken = () => {
+        const stored = localStorage.getItem('kda_user');
+        return stored ? JSON.parse(stored).token : null;
+    };
+
     const [selectedIds, setSelectedIds] = useState([]);
 
     useEffect(() => {
-        fetch('http://localhost:3000/api/grievances')
+        const token = getToken();
+        fetch('http://localhost:3000/api/grievances', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
             .then(res => res.json())
             .then(data => {
                 if (data.success) setGrievances(data.data);
@@ -43,14 +52,31 @@ const GrievancesPage = () => {
 
 
     const handleStatusUpdate = (id, updates) => {
-        // ...Existing Logic...
         const grievance = grievances.find(g => g.id === id);
         if (!grievance) return;
 
+        const token = getToken();
+        let body;
+        let headers = {
+            'Authorization': `Bearer ${token}`
+        };
+
+        if (updates.attachment) {
+            body = new FormData();
+            Object.keys(updates).forEach(key => {
+                if (updates[key] !== undefined) {
+                    body.append(key, updates[key]);
+                }
+            });
+        } else {
+            headers['Content-Type'] = 'application/json';
+            body = JSON.stringify(updates);
+        }
+
         fetch(`http://localhost:3000/api/grievances/${grievance.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updates)
+            headers: headers,
+            body: body
         })
             .then(res => res.json())
             .then(data => {

@@ -1,0 +1,72 @@
+﻿--- USER CHECK ---
+User tdr_zone1: {
+  "id": "06e1d354-6d03-4eba-82d9-d246750b1003",
+  "name": "TDR Zone 1",
+  "username": "tdr_zone1",
+  "password": "$2b$10$yf6x/HBPLjU7hzn8V90DQ.yufZ.pzkT2VF2wvs515.kYUvpvCEmCa",
+  "email": null,
+  "role": "REVENUE_OFFICIAL",
+  "section": "Revenue",
+  "zone": "TDR Zone 1",
+  "createdAt": "2026-01-29T07:48:43.714Z",
+  "updatedAt": "2026-02-24T07:10:04.197Z"
+}
+
+--- GRIEVANCE CHECK ---
+Found 6 grievances assigned to 'TDR Zone 1'
+[
+  {
+    "id": "2638f24a-af2b-4709-99c0-cfc9a6afd857",
+    "grievanceId": "KDA-2026-0011",
+    "assignedSection": "Deputy commissioner I",
+    "assignedZone": "TDR Zone 1",
+    "status": "IN_PROGRESS",
+    "subStatus": "ASSIGNED_TO_SUB"
+  },
+  {
+    "id": "826504cd-0594-4b83-a843-07e6151674b2",
+    "grievanceId": "KDA-2026-0012",
+    "assignedSection": "Deputy commissioner II",
+    "assignedZone": "TDR Zone 1",
+    "status": "IN_PROGRESS",
+    "subStatus": "ASSIGNED_TO_SUB"
+  },
+  {
+    "id": "5832855e-cd46-4da1-b0e2-a6a26e438450",
+    "grievanceId": "KDA-2026-0013",
+    "assignedSection": "Deputy commissioner II",
+    "assignedZone": "TDR Zone 1",
+    "status": "IN_PROGRESS",
+    "subStatus": "ASSIGNED_TO_SUB"
+  },
+  {
+    "id": "cc746a8e-cc66-4561-a2ed-33cd17129bca",
+    "grievanceId": "KDA-2026-0016",
+    "assignedSection": "Deputy commissioner II",
+    "assignedZone": "TDR Zone 1",
+    "status": "IN_PROGRESS",
+    "subStatus": "ASSIGNED_TO_SUB"
+  },
+  {
+    "id": "92d5c0d1-bf1b-4f6f-bba0-281c3cae2b42",
+    "grievanceId": "KDA-2026-0017",
+    "assignedSection": "Deputy commissioner I",
+    "assignedZone": "TDR Zone 1",
+    "status": "IN_PROGRESS",
+    "subStatus": "ASSIGNED_TO_SUB"
+  },
+  {
+    "id": "170cd9aa-4504-440a-afa7-c8c5bf3aef2c",
+    "grievanceId": "KDA-2026-0019",
+    "assignedSection": "Deputy commissioner I",
+    "assignedZone": "TDR Zone 1",
+    "status": "IN_PROGRESS",
+    "subStatus": "ASSIGNED_TO_SUB"
+  }
+]
+
+--- BACKEND LOGIC SIMULATION ---
+Simulated whereClause: {
+  "assignedZone": "TDR Zone 1"
+}
+Results count: 6

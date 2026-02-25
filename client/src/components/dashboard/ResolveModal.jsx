@@ -30,15 +30,19 @@ const ResolveModal = ({ grievance, onClose, onResolve }) => {
                 submitData.append('attachment', file);
             }
 
+            const tokenData = localStorage.getItem('kda_user');
+            const token = tokenData ? JSON.parse(tokenData).token : null;
+
             const response = await fetch(`http://localhost:3000/api/grievances/${grievance.id}`, {
                 method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` },
                 body: submitData
             });
 
             const data = await response.json();
 
             if (data.success) {
-                const successMessage = `Grievance ${grievance.grievanceId} has been resolved. Action Report: ${actionReport.substring(0, 30)}...`;
+                const successMessage = `RESOLVED_PROMPT:::${grievance.id}:::${grievance.grievanceId}:::${actionReport}`;
                 sendMockWhatsApp(successMessage);
 
                 onResolve(grievance.id); // Update parent state

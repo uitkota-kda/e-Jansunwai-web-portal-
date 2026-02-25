@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const prisma = new PrismaClient();
 
 // Get all users
@@ -150,6 +151,13 @@ exports.login = async (req, res) => {
             return res.status(401).json({ success: false, message: 'Invalid username or password' });
         }
 
+        // Generate JWT Token
+        const token = jwt.sign(
+            { id: user.id, username: user.username, role: user.role, section: user.section },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
         res.json({
             success: true,
             data: {
@@ -158,7 +166,8 @@ exports.login = async (req, res) => {
                 role: user.role,
                 section: user.section,
                 zone: user.zone, // Critical for sub-official task filtering
-                username: user.username
+                username: user.username,
+                token: token
             }
         });
     } catch (error) {

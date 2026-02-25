@@ -36,41 +36,33 @@ export const AuthProvider = ({ children }) => {
                 // isDirector should only be true for SECTION_OFFICERs who are Directors or Deputy Commissioners
                 userData.isDirector = isSectionOfficer && (sectionName.includes('Director') || sectionName.includes('Deputy commissioner'));
 
-                // For EE users, ensure they have the zone correctly mapped if not coming from DB
-                if (userData.role === 'EXECUTIVE_ENGINEER' && !userData.zone) {
-                    // Normalize username to detect zone
-                    const slug = userData.username.replace('ee_', '');
-                    if (slug === 'housing') userData.zone = 'Housing';
-                    else if (slug === 'crf') userData.zone = 'CRF';
-                    else if (slug === 'electricity') userData.zone = 'Electricity';
-                    else if (slug === 'horticulture_abd') userData.zone = 'Horticulture/ ABD';
-                    else if (slug === 'sewerage') userData.zone = 'Sewerage';
-                    else if (slug === 'water__i') userData.zone = 'Water - I';
-                    else if (slug === 'water__ii') userData.zone = 'Water - II';
-                    else {
-                        // Fallback: uppercase but fix common patterns
-                        userData.zone = slug.toUpperCase().replace(/_/g, ' ');
+                // Sub-Official Zone Normalization Fallback (If missing from DB or cached stale)
+                const subOfficialRoles = ['EXECUTIVE_ENGINEER', 'REVENUE_OFFICIAL', 'PLANNING_OFFICIAL', 'LEGAL_OFFICIAL', 'FINANCE_OFFICIAL'];
+                if (subOfficialRoles.includes(userData.role) && !userData.zone) {
+                    const uname = userData.username;
+                    if (uname.startsWith('tdr_zone')) {
+                        userData.zone = `TDR Zone ${uname.replace('tdr_zone', '')}`;
+                    } else if (uname === 'aao_revenue') {
+                        userData.zone = 'AAO- Kota South';
+                    } else if (uname.startsWith('ee_')) {
+                        const slug = uname.replace('ee_', '');
+                        if (slug === 'housing') userData.zone = 'Housing';
+                        else if (slug === 'crf') userData.zone = 'CRF';
+                        else if (slug === 'electricity') userData.zone = 'Electricity';
+                        else if (slug === 'horticulture_abd') userData.zone = 'Horticulture/ ABD';
+                        else if (slug === 'sewerage') userData.zone = 'Sewerage';
+                        else if (slug === 'water__i') userData.zone = 'Water - I';
+                        else if (slug === 'water__ii') userData.zone = 'Water - II';
+                        else userData.zone = slug.charAt(0).toUpperCase() + slug.slice(1).replace(/_/g, ' ');
+                    } else if (uname.startsWith('atp_zone')) {
+                        userData.zone = `ATP Zone ${uname.replace('atp_zone', '')}`;
                     }
                 }
 
+                // Token is already in userData from server response
                 setUser(userData);
                 localStorage.setItem('kda_user', JSON.stringify(userData));
                 return { success: true };
-            } else {
-                // Mock logins for quick access
-                if (username === 'commissioner' && password === '123') {
-                    const mockUser = {
-                        id: 'comm-1',
-                        name: 'Commissioner KDA',
-                        username: 'commissioner',
-                        role: 'COMMISSIONER',
-                        section: 'Administration'
-                    };
-                    setUser(mockUser);
-                    localStorage.setItem('kda_user', JSON.stringify(mockUser));
-                    return { success: true, data: mockUser };
-                }
-
                 return { success: false, message: result.message || 'Invalid credentials' };
             }
         } catch (err) {

@@ -1,0 +1,162 @@
+﻿[
+  {
+    "grievanceId": "KDA-2026-0001",
+    "assignedSection": "Deputy commissioner I",
+    "assignedZone": "AAO- Ladpura",
+    "subStatus": "ASSIGNED_TO_SUB",
+    "status": "IN_PROGRESS",
+    "updatedAt": "2026-02-23T07:59:42.627Z"
+  },
+  {
+    "grievanceId": "KDA-2026-0002",
+    "assignedSection": "Director Planning",
+    "assignedZone": "Housing",
+    "subStatus": "REOPENED_BY_COMMISSIONER",
+    "status": "RESOLVED",
+    "updatedAt": "2026-02-18T11:51:09.038Z"
+  },
+  {
+    "grievanceId": "KDA-2026-0003",
+    "assignedSection": "Director Finance",
+    "assignedZone": "",
+    "subStatus": null,
+    "status": "ACCEPTED",
+    "updatedAt": "2026-02-18T09:18:13.154Z"
+  },
+  {
+    "grievanceId": "KDA-2026-0004",
+    "assignedSection": "Director Engineering",
+    "assignedZone": "",
+    "subStatus": null,
+    "status": "ACCEPTED",
+    "updatedAt": "2026-02-18T06:34:12.595Z"
+  },
+  {
+    "grievanceId": "KDA-2026-0005",
+    "assignedSection": "Director Engineering",
+    "assignedZone": "Housing",
+    "subStatus": "SUB_SUBMITTED",
+    "status": "RESOLVED",
+    "updatedAt": "2026-02-19T05:35:21.831Z"
+  },
+  {
+    "grievanceId": "KDA-2026-0006",
+    "assignedSection": "Deputy commissioner I",
+    "assignedZone": "",
+    "subStatus": null,
+    "status": "UNSATISFIED",
+    "updatedAt": "2026-02-18T07:22:14.831Z"
+  },
+  {
+    "grievanceId": "KDA-2026-0007",
+    "assignedSection": "Deputy commissioner II",
+    "assignedZone": "",
+    "subStatus": null,
+    "status": "RESOLVED",
+    "updatedAt": "2026-02-19T05:30:38.905Z"
+  },
+  {
+    "grievanceId": "KDA-2026-0008",
+    "assignedSection": "Director Planning",
+    "assignedZone": "ATP Zone 1",
+    "subStatus": "SUB_SUBMITTED",
+    "status": "RESOLVED",
+    "updatedAt": "2026-02-19T07:42:40.739Z"
+  },
+  {
+    "grievanceId": "KDA-2026-0009",
+    "assignedSection": "Deputy commissioner II",
+    "assignedZone": "AAO- Kota North",
+    "subStatus": "SUB_SUBMITTED",
+    "status": "RESOLVED",
+    "updatedAt": "2026-02-24T05:19:03.747Z"
+  },
+  {
+    "grievanceId": "KDA-2026-0010",
+    "assignedSection": "Director Engineering",
+    "assignedZone": "Housing",
+    "subStatus": "SUB_SUBMITTED",
+    "status": "RESOLVED",
+    "updatedAt": "2026-02-23T09:50:23.477Z"
+  },
+  {
+    "grievanceId": "KDA-2026-0011",
+    "assignedSection": "Deputy commissioner I",
+    "assignedZone": "TDR Zone 1",
+    "subStatus": "ASSIGNED_TO_SUB",
+    "status": "IN_PROGRESS",
+    "updatedAt": "2026-02-23T09:36:56.620Z"
+  },
+  {
+    "grievanceId": "KDA-2026-0012",
+    "assignedSection": "Deputy commissioner II",
+    "assignedZone": "TDR Zone 1",
+    "subStatus": "ASSIGNED_TO_SUB",
+    "status": "IN_PROGRESS",
+    "updatedAt": "2026-02-23T09:40:26.690Z"
+  },
+  {
+    "grievanceId": "KDA-2026-0013",
+    "assignedSection": "Deputy commissioner II",
+    "assignedZone": "TDR Zone 1",
+    "subStatus": "ASSIGNED_TO_SUB",
+    "status": "IN_PROGRESS",
+    "updatedAt": "2026-02-23T09:45:35.511Z"
+  },
+  {
+    "grievanceId": "KDA-2026-0014",
+    "assignedSection": "Deputy commissioner II",
+    "assignedZone": "TDR Zone 2",
+    "subStatus": "ASSIGNED_TO_SUB",
+    "status": "RESOLVED",
+    "updatedAt": "2026-02-24T05:18:07.822Z"
+  },
+  {
+    "grievanceId": "KDA-2026-0015",
+    "assignedSection": "Director Engineering",
+    "assignedZone": "CRF",
+    "subStatus": "SUB_SUBMITTED",
+    "status": "RESOLVED",
+    "updatedAt": "2026-02-24T05:25:57.239Z"
+  },
+  {
+    "grievanceId": "KDA-2026-0016",
+    "assignedSection": "Deputy commissioner II",
+    "assignedZone": "TDR Zone 1",
+    "subStatus": "ASSIGNED_TO_SUB",
+    "status": "IN_PROGRESS",
+    "updatedAt": "2026-02-24T06:37:58.120Z"
+  },
+  {
+    "grievanceId": "KDA-2026-0017",
+    "assignedSection": "Deputy commissioner I",
+    "assignedZone": "TDR Zone 1",
+    "subStatus": "ASSIGNED_TO_SUB",
+    "status": "IN_PROGRESS",
+    "updatedAt": "2026-02-24T06:41:46.154Z"
+  },
+  {
+    "grievanceId": "KDA-2026-0018",
+    "assignedSection": "Deputy commissioner I",
+    "assignedZone": "TDR Zone 3",
+    "subStatus": "SUB_SUBMITTED",
+    "status": "RESOLVED",
+    "updatedAt": "2026-02-24T06:50:30.032Z"
+  },
+  {
+    "grievanceId": "KDA-2026-0019",
+    "assignedSection": "Deputy commissioner I",
+    "assignedZone": "TDR Zone 1",
+    "subStatus": "ASSIGNED_TO_SUB",
+    "status": "IN_PROGRESS",
+    "updatedAt": "2026-02-24T06:53:56.717Z"
+  },
+  {
+    "grievanceId": "KDA-2026-0020",
+    "assignedSection": null,
+    "assignedZone": null,
+    "subStatus": null,
+    "status": "PENDING",
+    "updatedAt": "2026-02-24T07:24:42.138Z"
+  }
+]

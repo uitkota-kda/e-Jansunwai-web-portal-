@@ -6,11 +6,11 @@ import {
 } from 'lucide-react';
 import ManageGrievanceModal from '../../components/dashboard/ManageGrievanceModal';
 import GrievanceDetailsModal from '../../components/dashboard/GrievanceDetailsModal';
+import { sendMockWhatsApp } from '../../components/layout/MockWhatsApp';
 import ScheduleVCModal from '../../components/dashboard/ScheduleVCModal';
 import DailyReportModal from '../../components/dashboard/DailyReportModal';
 import AssignZoneModal from '../../components/dashboard/AssignZoneModal';
 import { useAuth } from '../../context/AuthContext';
-import { sendMockWhatsApp } from '../../components/layout/MockWhatsApp';
 
 // Enhanced Stat Card as Filter Button
 const StatCard = ({ title, value, subtext, icon: Icon, color, trend, onClick, isActive }) => (
@@ -75,14 +75,102 @@ const OfficerDashboard = () => {
     const [selectedAssignGrievance, setSelectedAssignGrievance] = useState(null);
     const [directorFilter, setDirectorFilter] = useState('ALL');
 
+    // Fetch Data
+    const fetchData = async () => {
+        try {
+            const token = getToken();
+            const response = await fetch('http://localhost:3000/api/grievances', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                // Determine if we need to filter by section (if backend returns all)
+                // For now, assuming backend handles major filtering or we show all returned
+                setGrievances(data.data);
+            }
+        } catch (err) {
+            console.error('Failed to fetch grievances:', err);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handleStatusUpdate = async (id, updates) => {
+        try {
+            const token = getToken();
+            let body;
+            let headers = {
+                'Authorization': `Bearer ${token}`
+            };
+
+            if (updates.attachment) {
+                body = new FormData();
+                Object.keys(updates).forEach(key => {
+                    if (updates[key] !== undefined) {
+                        body.append(key, updates[key]);
+                    }
+                });
+            } else {
+                headers['Content-Type'] = 'application/json';
+                body = JSON.stringify(updates);
+            }
+
+            const response = await fetch(`http://localhost:3000/api/grievances/${id}`, {
+                method: 'PUT',
+                headers: headers,
+                body: body
+            });
+            const data = await response.json();
+            if (data.success) {
+                if (updates.status === 'RESOLVED') {
+                    const grievance = grievances.find(g => g.id === id);
+                    if (grievance) {
+                        const actionReport = updates.remarks || updates.description || 'Grievance has been resolved.';
+                        sendMockWhatsApp(`RESOLVED_PROMPT:::${grievance.id}:::${grievance.grievanceId}:::${actionReport}`);
+                    }
+                }
+                alert('Status Updated Successfully');
+                fetchData();
+                setSelectedManageGrievance(null);
+            } else {
+                alert(data.message || 'Update failed');
+            }
+        } catch (error) {
+            console.error('Update error:', error);
+            alert('Update failed');
+        }
+    };
+
+    const handleScheduleVC = (g) => {
+        setVcGrievance(g);
+        setShowVCModal(true);
+    };
+
+    // Helper to get token
+    const getToken = () => {
+        const stored = localStorage.getItem('kda_user');
+        return stored ? JSON.parse(stored).token : null;
+    };
+
     const handleAssignZone = async (grievanceId, zone, note, expectedDate) => {
         try {
             const grievance = grievances.find(g => g.id === grievanceId);
             if (!grievance) return;
 
+            const token = getToken();
+
             const response = await fetch(`http://localhost:3000/api/grievances/${grievance.id}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     assignedZone: zone,
                     directorNote: note,
@@ -97,109 +185,17 @@ const OfficerDashboard = () => {
             });
 
             const data = await response.json();
-
             if (data.success) {
-                alert(`Assigned to ${zone} successfully`);
-                setSelectedAssignGrievance(null);
+                alert('Zone Assigned Successfully');
                 fetchData();
+                setSelectedAssignGrievance(null);
             } else {
-                alert('Assignment failed: ' + data.message);
+                alert(data.message || 'Failed to assign zone');
             }
-        } catch (err) {
-            console.error(err);
-            alert('Assignment failed: ' + err.message);
+        } catch (error) {
+            console.error('Error assigning zone:', error);
+            alert('Error assigning zone');
         }
-    };
-
-    const fetchData = async () => {
-        try {
-            const response = await fetch('http://localhost:3000/api/grievances');
-            const data = await response.json();
-
-            if (data.success) {
-                let filtered = data.data;
-                if (user?.role === 'SECTION_OFFICER' && user?.section) {
-                    filtered = data.data.filter(g => g.assignedSection === user.section);
-                }
-                setGrievances(filtered);
-            }
-        } catch (err) {
-            console.error('Failed to fetch grievances:', err);
-        }
-    };
-
-    useEffect(() => {
-        fetchData();
-    }, [user]);
-
-    const handleStatusUpdate = async (id, updates) => {
-        try {
-            const grievance = grievances.find(g => g.id === id);
-            if (!grievance) return;
-
-            const finalUpdates = {
-                ...updates,
-                performedBy: user?.name || 'Officer'
-            };
-
-            let body;
-            let headers = {};
-
-            if (finalUpdates.attachment) {
-                body = new FormData();
-                Object.keys(finalUpdates).forEach(key => {
-                    if (finalUpdates[key] !== undefined) {
-                        body.append(key, finalUpdates[key]);
-                    }
-                });
-            } else {
-                headers['Content-Type'] = 'application/json';
-                body = JSON.stringify(finalUpdates);
-            }
-
-            const response = await fetch(`http://localhost:3000/api/grievances/${grievance.id}`, {
-                method: 'PUT',
-                headers: headers,
-                body: body
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                setGrievances(prev => {
-                    const updatedGrievance = data.data;
-                    // If the grievance is no longer assigned to this section (e.g. marked as reassign), remove it from local state
-                    if (updatedGrievance.assignedSection !== user.section) {
-                        return prev.filter(g => g.id !== id);
-                    }
-                    return prev.map(g => g.id === id ? updatedGrievance : g);
-                });
-
-                // Closure for any modals/states
-                if (typeof setSelectedManageGrievance === 'function') setSelectedManageGrievance(null);
-
-                // WhatsApp Notifications
-                const isPortalEntry = !grievance.source || grievance.source === 'WEB_PORTAL';
-                if (isPortalEntry) {
-                    if (updates.status === 'IN_PROGRESS') {
-                        sendMockWhatsApp(`UPDATE: Your grievance ${grievance.grievanceId} is now being processed. Expected disposal date: ${updates.expectedDate}.`);
-                    } else if (updates.status === 'REJECTED') {
-                        sendMockWhatsApp(`UPDATE: Your grievance ${grievance.grievanceId} has been REJECTED.\n\nRemarks: ${updates.remarks}`);
-                    } else if (updates.status === 'RESOLVED') {
-                        sendMockWhatsApp(`UPDATE: Your grievance ${grievance.grievanceId} has been RESOLVED.\n\nAction Taken: ${updates.remarks}`);
-                    }
-                }
-                alert('Grievance updated successfully!');
-            }
-        } catch (err) {
-            console.error(err);
-            alert('Update failed: ' + err.message);
-        }
-    };
-
-    const handleScheduleVC = (g) => {
-        setVcGrievance(g);
-        setShowVCModal(true);
     };
 
     const checkIsCritical = (g) => {
@@ -225,7 +221,17 @@ const OfficerDashboard = () => {
     // Filter Logic
     const filteredGrievances = grievances.filter(g => {
         let matchesTab = true;
-        if (activeTab === 'PENDING') matchesTab = g.status === 'PENDING' || g.status === 'ACCEPTED' || g.status === 'REOPENED';
+        if (activeTab === 'PENDING') {
+            matchesTab = g.status === 'PENDING' || g.status === 'ACCEPTED' || g.status === 'REOPENED';
+
+            // For Directors, also include In-Progress items that need their action
+            if (user?.isDirector) {
+                matchesTab = matchesTab || (
+                    g.status === 'IN_PROGRESS' &&
+                    (!g.assignedZone || g.eeStatus === 'RETURNED' || g.eeStatus === 'REPLIED')
+                );
+            }
+        }
         else if (activeTab === 'IN_PROGRESS') {
             matchesTab = g.status === 'IN_PROGRESS';
 
@@ -252,7 +258,7 @@ const OfficerDashboard = () => {
         else if (activeTab === 'ESCALATED') matchesTab = checkIsCritical(g);
         else if (activeTab === 'RESOLVED') matchesTab = g.status === 'RESOLVED';
         else if (activeTab === 'REJECTED') matchesTab = g.status === 'REJECTED';
-        else if (activeTab === 'UNSATISFIED') matchesTab = g.satisfactionStatus === 'NOT_SATISFIED' || g.satisfactionStatus === 'VC_SCHEDULED_SO';
+        else if (activeTab === 'UNSATISFIED') matchesTab = g.status === 'UNSATISFIED' || ['NOT_SATISFIED', 'VC_SCHEDULED_SO', 'VC_DONE_SO', 'NOT_SATISFIED_POST_VC_SO'].includes(g.satisfactionStatus);
 
         const matchesSource = sourceFilter === 'ALL' || g.source === sourceFilter;
         const lowerSearch = searchTerm.toLowerCase();
@@ -261,7 +267,30 @@ const OfficerDashboard = () => {
             (g.mobile?.toLowerCase().includes(lowerSearch)) ||
             (g.name?.toLowerCase().includes(lowerSearch));
 
-        return matchesTab && matchesSource && matchesSearch;
+        // Section/Department Filter
+        // If user has a zone, they should also see what is assigned to that zone
+        const userSection = (user?.section || '').trim().toLowerCase();
+        const userZone = (user?.zone || '').trim().toLowerCase();
+        const grievanceSection = (g.assignedSection || '').trim().toLowerCase();
+        const grievanceZone = (g.assignedZone || '').trim().toLowerCase();
+
+        let matchesSection = true;
+        if (userZone) {
+            // User has a specific zone (like TDR Zone 1) - show if either section or zone matches
+            matchesSection = (grievanceZone === userZone) || (userSection && grievanceSection === userSection);
+        } else if (userSection) {
+            // User only has a section - must match section
+            matchesSection = (grievanceSection === userSection);
+        }
+
+        // VISIBILITY RULE:
+        // Fresh grievances (PENDING & Unassigned) should ONLY be visible to Moderator.
+        // If we are in OfficerDashboard, we are likely a Section Officer/Director.
+        // So we must HIDE fresh unassigned grievances.
+        const isFreshUnassigned = g.status === 'PENDING' && !g.assignedSection;
+        if (isFreshUnassigned) return false;
+
+        return matchesTab && matchesSource && matchesSearch && matchesSection;
     });
 
     const priorityGrievances = filteredGrievances.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt)).filter(g => {
@@ -296,37 +325,50 @@ const OfficerDashboard = () => {
                     icon={FileText}
                     color="bg-blue-500"
                     trend="neutral"
-                    onClick={() => { setActiveTab('ALL'); setCurrentPage(1); }}
+                    onClick={() => { setActiveTab('ALL'); setDirectorFilter('ALL'); setCurrentPage(1); }}
                     isActive={activeTab === 'ALL'}
                 />
                 <StatCard
                     title="Action Pending"
-                    value={grievances.filter(g => g.status === 'PENDING' || g.status === 'ACCEPTED' || g.status === 'REOPENED').length}
-                    subtext="New"
+                    value={grievances.filter(g =>
+                        (g.status === 'PENDING' || g.status === 'ACCEPTED' || g.status === 'REOPENED') ||
+                        (user?.isDirector && g.status === 'IN_PROGRESS' && (!g.assignedZone || g.eeStatus === 'RETURNED' || g.eeStatus === 'REPLIED'))
+                    ).length}
+                    subtext="Needs Attention"
                     icon={Clock}
                     color="bg-orange-500"
                     trend="up"
-                    onClick={() => { setActiveTab('PENDING'); setCurrentPage(1); }}
-                    isActive={activeTab === 'PENDING'}
+                    onClick={() => {
+                        setActiveTab('PENDING');
+                        if (user?.isDirector) setDirectorFilter('ACTION_PENDING');
+                        setCurrentPage(1);
+                    }}
+                    isActive={activeTab === 'PENDING' || (user?.isDirector && activeTab === 'IN_PROGRESS' && directorFilter === 'ACTION_PENDING')}
                 />
                 <StatCard
                     title="In Progress"
-                    value={grievances.filter(g => g.status === 'IN_PROGRESS').length}
-                    subtext="Processing"
+                    value={grievances.filter(g =>
+                        g.status === 'IN_PROGRESS' && (!user?.isDirector || (g.assignedZone && !g.eeStatus))
+                    ).length}
+                    subtext="With Under-officers"
                     icon={Activity}
                     color="bg-indigo-500"
                     trend="neutral"
-                    onClick={() => { setActiveTab('IN_PROGRESS'); setCurrentPage(1); }}
-                    isActive={activeTab === 'IN_PROGRESS'}
+                    onClick={() => {
+                        setActiveTab('IN_PROGRESS');
+                        if (user?.isDirector) setDirectorFilter('ASSIGNED_TO_EE');
+                        setCurrentPage(1);
+                    }}
+                    isActive={activeTab === 'IN_PROGRESS' && (!user?.isDirector || directorFilter === 'ASSIGNED_TO_EE')}
                 />
                 <StatCard
                     title="Unsatisfied"
-                    value={grievances.filter(g => g.satisfactionStatus === 'NOT_SATISFIED').length}
+                    value={grievances.filter(g => g.status === 'UNSATISFIED' || ['NOT_SATISFIED', 'VC_SCHEDULED_SO', 'VC_DONE_SO', 'NOT_SATISFIED_POST_VC_SO'].includes(g.satisfactionStatus)).length}
                     subtext="Citizen Feedback"
                     icon={ShieldAlert}
                     color="bg-rose-600"
                     trend="up"
-                    onClick={() => { setActiveTab('UNSATISFIED'); setCurrentPage(1); }}
+                    onClick={() => { setActiveTab('UNSATISFIED'); setDirectorFilter('ALL'); setCurrentPage(1); }}
                     isActive={activeTab === 'UNSATISFIED'}
                 />
                 <StatCard
@@ -336,7 +378,7 @@ const OfficerDashboard = () => {
                     icon={AlertTriangle}
                     color="bg-red-500"
                     trend="up"
-                    onClick={() => { setActiveTab('ESCALATED'); setCurrentPage(1); }}
+                    onClick={() => { setActiveTab('ESCALATED'); setDirectorFilter('ALL'); setCurrentPage(1); }}
                     isActive={activeTab === 'ESCALATED'}
                 />
                 <StatCard
@@ -346,7 +388,7 @@ const OfficerDashboard = () => {
                     icon={CheckCircle}
                     color="bg-green-500"
                     trend="up"
-                    onClick={() => { setActiveTab('RESOLVED'); setCurrentPage(1); }}
+                    onClick={() => { setActiveTab('RESOLVED'); setDirectorFilter('ALL'); setCurrentPage(1); }}
                     isActive={activeTab === 'RESOLVED'}
                 />
                 <StatCard
@@ -356,7 +398,7 @@ const OfficerDashboard = () => {
                     icon={XCircle}
                     color="bg-slate-500"
                     trend="neutral"
-                    onClick={() => { setActiveTab('REJECTED'); setCurrentPage(1); }}
+                    onClick={() => { setActiveTab('REJECTED'); setDirectorFilter('ALL'); setCurrentPage(1); }}
                     isActive={activeTab === 'REJECTED'}
                 />
             </div>
@@ -473,9 +515,44 @@ const OfficerDashboard = () => {
                                                     <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded border border-blue-100 uppercase tracking-tighter">
                                                         {g.source?.replace('_', ' ') || 'WEB PORTAL'}
                                                     </span>
-                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${g.status === 'ACCEPTED' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${g.status === 'ACCEPTED' ? 'bg-blue-100 text-blue-700' :
+                                                        g.status === 'UNSATISFIED' ? 'bg-rose-100 text-rose-700' :
+                                                            'bg-gray-100 text-gray-600'}`}>
                                                         {g.status}
                                                     </span>
+
+                                                    {/* Satisfaction Flags */}
+                                                    {g.satisfactionStatus === 'SATISFIED' && (
+                                                        <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold border border-green-200 flex items-center">
+                                                            <CheckCircle className="w-3 h-3 mr-1" /> Satisfied
+                                                        </span>
+                                                    )}
+                                                    {g.satisfactionStatus === 'NOT_SATISFIED' && (
+                                                        <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold border border-red-200 flex items-center">
+                                                            <ShieldAlert className="w-3 h-3 mr-1" /> Dissatisfied
+                                                        </span>
+                                                    )}
+                                                    {g.satisfactionStatus === 'VC_SCHEDULED_SO' && (
+                                                        <span className="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded font-bold border border-yellow-200 flex items-center">
+                                                            <Video className="w-3 h-3 mr-1" /> VC Scheduled
+                                                        </span>
+                                                    )}
+                                                    {g.satisfactionStatus === 'VC_DONE_SO' && (
+                                                        <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold border border-blue-200 flex items-center">
+                                                            <Video className="w-3 h-3 mr-1" /> VC Done
+                                                        </span>
+                                                    )}
+                                                    {g.satisfactionStatus === 'SATISFIED_POST_VC_SO' && (
+                                                        <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold border border-green-200 flex items-center">
+                                                            <CheckCircle className="w-3 h-3 mr-1" /> Satisfied (Post VC)
+                                                        </span>
+                                                    )}
+                                                    {g.satisfactionStatus === 'NOT_SATISFIED_POST_VC_SO' && (
+                                                        <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold border border-orange-200 flex items-center">
+                                                            <MapPin className="w-3 h-3 mr-1" /> Visit Office
+                                                        </span>
+                                                    )}
+
                                                     {g.subStatus && (
                                                         <span className="mt-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 uppercase">
                                                             {(g.subStatus === 'ASSIGNED_TO_EE' || g.subStatus === 'ASSIGNED_TO_SUB')
@@ -524,6 +601,28 @@ const OfficerDashboard = () => {
                                                             )}
                                                         </div>
                                                     )}
+                                                    {g.hearingLink && g.status !== 'RESOLVED' && g.status !== 'REJECTED' && (
+                                                        <div className="flex items-center space-x-2 mt-1">
+                                                            <span className="text-[10px] bg-orange-50 text-orange-700 px-2 py-0.5 rounded font-bold border border-orange-200 flex items-center">
+                                                                <Video className="w-3 h-3 mr-1" /> Hearing: {g.hearingDate} {g.hearingTime}
+                                                            </span>
+                                                            <a href={g.hearingLink} target="_blank" rel="noopener noreferrer" className="text-[10px] text-orange-600 underline hover:text-orange-800">
+                                                                Join Link
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                    {g.vcScheduledDate && !['VC_DONE_SO', 'SATISFIED_POST_VC_SO', 'NOT_SATISFIED_POST_VC_SO', 'CLOSED_HIGHER_W_VC'].includes(g.satisfactionStatus) && (
+                                                        <div className="flex items-center space-x-2 mt-1">
+                                                            <span className="text-[10px] bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded font-bold border border-yellow-200 flex items-center">
+                                                                <Video className="w-3 h-3 mr-1" /> VC: {new Date(g.vcScheduledDate).toLocaleString()}
+                                                            </span>
+                                                            {g.vcMeetingLink && (
+                                                                <a href={g.vcMeetingLink} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-600 underline hover:text-blue-800">
+                                                                    Join Link
+                                                                </a>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 {/* Action Buttons */}
@@ -552,15 +651,6 @@ const OfficerDashboard = () => {
                                                                     <MapPin className="w-3 h-3 mr-2" /> {g.assignedZone ? 'Re-Assign Officer/Area' : 'Assign Officer/Area'}
                                                                 </button>
                                                             )}
-
-                                                            {/* Sub-Official Status Badge for Director */}
-                                                            {user?.isDirector && g.eeStatus && (
-                                                                <span className={`block w-full text-center text-[10px] font-bold px-2 py-1 rounded mt-1 
-                                                                    ${g.eeStatus === 'REPLIED' ? 'bg-green-100 text-green-700' :
-                                                                        g.eeStatus === 'RETURNED' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'}`}>
-                                                                    {subOfficialShort}: {g.eeStatus}
-                                                                </span>
-                                                            )}
                                                         </>
                                                     )}
                                                 </div>
@@ -570,10 +660,7 @@ const OfficerDashboard = () => {
                                             {user?.isDirector && g.eeRemarks && (
                                                 <div className="mt-3 bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm">
                                                     <p className="font-bold text-gray-700 text-xs uppercase mb-1">
-                                                        {user?.section === 'Director Engineering' ? 'Executive Engineer' :
-                                                            user?.section?.includes('commissioner') ? 'Tehsildar' :
-                                                                user?.section?.includes('Planning') ? 'Planner' :
-                                                                    user?.section?.includes('Legal') ? 'Legal Official' : 'Finance Official'} ({g.assignedZone}) Remarks:
+                                                        {subOfficialTitle} ({g.assignedZone}) Remarks:
                                                     </p>
                                                     <p className="text-gray-800">{g.eeRemarks}</p>
                                                     <div className="mt-2 text-xs text-gray-400 flex items-center gap-1">
@@ -582,51 +669,60 @@ const OfficerDashboard = () => {
                                                 </div>
                                             )}
 
-                                            < div className="mt-3 flex justify-end">
-                                                {(g.status === 'RESOLVED' || g.status === 'REJECTED') ? (
-                                                    <span className="text-xs text-gray-400 italic px-3 py-1.5">
-                                                        Case Closed
-                                                    </span>
-                                                ) : (
-                                                    g.satisfactionStatus === 'NOT_SATISFIED' ? (
-                                                        <button
-                                                            onClick={async () => {
-                                                                // Quickly trigger the VC modal, but maybe pre-fill 'Reason' as 'Unsatisfied Citizen'
-                                                                const date = prompt("Enter VC Date (YYYY-MM-DD):", new Date().toISOString().split('T')[0]);
-                                                                const time = prompt("Enter VC Time (HH:MM):", "10:00");
-                                                                if (date && time) {
-                                                                    const meetingLink = `https://meet.jit.si/KDA-Grievance-${g.grievanceId}`;
-
-                                                                    // Call Backend to Schedule
-                                                                    const res = await fetch(`http://localhost:3000/api/grievances/${g.id}/schedule-vc`, {
-                                                                        method: 'POST',
-                                                                        headers: { 'Content-Type': 'application/json' },
-                                                                        body: JSON.stringify({
-                                                                            date: `${date} ${time}`,
-                                                                            link: meetingLink,
-                                                                            level: 'SO'
-                                                                        })
-                                                                    });
-                                                                    const data = await res.json();
-                                                                    if (data.success) {
-                                                                        alert("VC Scheduled & Citizen Notified via WhatsApp");
-                                                                        fetchData();
-                                                                    }
-                                                                }
-                                                            }}
-                                                            className="flex items-center px-3 py-1.5 bg-rose-50 text-rose-700 text-xs font-bold rounded-lg hover:bg-rose-100 transition-colors ml-auto animate-pulse"
-                                                        >
-                                                            <Video className="w-3 h-3 mr-2" /> Schedule Satisfaction VC
-                                                        </button>
-                                                    ) : (
-                                                        (g.status !== 'RESOLVED' && g.status !== 'REJECTED') && (
+                                            <div className="mt-3 flex justify-end">
+                                                {(g.status === 'RESOLVED' || g.status === 'UNSATISFIED') ? (
+                                                    <div className="flex gap-2">
+                                                        {g.satisfactionStatus === 'NOT_SATISFIED' && (
                                                             <button
                                                                 onClick={() => handleScheduleVC(g)}
-                                                                className="flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg hover:bg-blue-100 transition-colors ml-auto"
+                                                                className="flex items-center px-3 py-1.5 bg-orange-50 text-orange-700 text-xs font-bold rounded-lg hover:bg-orange-100 transition-colors"
                                                             >
                                                                 <Video className="w-3 h-3 mr-2" /> Schedule Hearing
                                                             </button>
-                                                        )
+                                                        )}
+
+                                                        {g.satisfactionStatus === 'VC_SCHEDULED_SO' && (
+                                                            <button
+                                                                onClick={async () => {
+                                                                    if (window.confirm("Mark VC as done? This will trigger a satisfaction check for the citizen.")) {
+                                                                        const res = await fetch(`http://localhost:3000/api/grievances/${g.id}/complete-vc`, {
+                                                                            method: 'POST',
+                                                                            headers: { 'Content-Type': 'application/json' },
+                                                                            body: JSON.stringify({ level: 'SO' })
+                                                                        });
+                                                                        const data = await res.json();
+                                                                        if (data.success) {
+                                                                            sendMockWhatsApp(`VC_DONE_PROMPT:::${g.id}:::${g.grievanceId}`);
+                                                                            alert("VC marked as Done. Citizen has been asked for feedback.");
+                                                                            fetchData();
+                                                                        }
+                                                                    }
+                                                                }}
+                                                                className="flex items-center px-3 py-1.5 bg-green-50 text-green-700 text-xs font-bold rounded-lg hover:bg-green-100 transition-colors"
+                                                            >
+                                                                <CheckCircle className="w-3 h-3 mr-2" /> Mark VC Done
+                                                            </button>
+                                                        )}
+
+                                                        {['SATISFIED', 'SATISFIED_POST_VC_SO', 'NOT_SATISFIED_POST_VC_SO', 'CLOSED_HIGHER_W_VC'].includes(g.satisfactionStatus) && (
+                                                            <span className="text-xs text-gray-400 italic px-3 py-1.5">
+                                                                Case Closed
+                                                            </span>
+                                                        )}
+
+                                                        {(!g.satisfactionStatus || g.satisfactionStatus === 'PENDING_FEEDBACK') && (
+                                                            <span className="text-xs text-gray-400 italic px-3 py-1.5 flex items-center">
+                                                                <Clock className="w-3 h-3 mr-1" /> Waiting for Feedback
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    (g.status === 'REJECTED') ? (
+                                                        <span className="text-xs text-gray-400 italic px-3 py-1.5">
+                                                            Case Closed (Rejected)
+                                                        </span>
+                                                    ) : (
+                                                        null
                                                     )
                                                 )}
                                             </div>

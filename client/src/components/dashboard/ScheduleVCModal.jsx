@@ -8,52 +8,75 @@ const ScheduleVCModal = ({ grievance, onClose, onSuccess }) => {
     const [generatedLink, setGeneratedLink] = useState('');
     const [scheduling, setScheduling] = useState(false);
 
-    const handleSchedule = (e) => {
+    const handleSchedule = async (e) => {
         e.preventDefault();
         setScheduling(true);
 
         const meetingId = `KDA-${grievance.grievanceId}-${Date.now().toString().slice(-4)}`;
         const link = `${window.location.origin}/hearing/${meetingId}`;
 
-        // Update the grievance in the backend
-        const url = `http://localhost:3000/api/grievances/${grievance.id}`;
-        console.log('Scheduling VC PUT:', url, { hearingDate: date, hearingTime: time, hearingLink: link });
+        const tokenData = localStorage.getItem('kda_user');
+        const tokenToken = tokenData ? JSON.parse(tokenData) : null;
+        const token = tokenToken?.token;
+        const userName = tokenToken?.name || 'Officer';
 
-        fetch(url, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                hearingDate: date,
-                hearingTime: time,
-                hearingLink: link
-            })
-        })
-            .then(async res => {
-                const isJson = res.headers.get('content-type')?.includes('application/json');
-                const data = isJson ? await res.json() : { success: false, message: await res.text() };
+        // Check if this is a "Satisfaction VC" (Unsatisfied citizen) or a regular hearing
+        const isSatisfactionVC = ['UNSATISFIED', 'RESOLVED'].includes(grievance.status) &&
+            (grievance.satisfactionStatus === 'NOT_SATISFIED' || grievance.satisfactionStatus === 'VC_SCHEDULED_SO');
 
-                if (!res.ok) {
-                    throw new Error(data.message || `Server Error ${res.status}`);
-                }
-                return data;
-            })
-            .then(data => {
-                if (data.success) {
-                    setGeneratedLink(link);
-                    const msg = `UPDATE: A Video Conference has been scheduled for your grievance ${grievance.grievanceId} on ${date} at ${time}. Join via: ${link}`;
-                    sendMockWhatsApp(msg);
-                    if (onSuccess) onSuccess();
-                } else {
-                    alert('Failed: ' + (data.message || 'Unknown error'));
-                }
-            })
-            .catch(err => {
-                console.error('VC SYNC ERROR:', err);
-                alert(`Sync Error: ${err.message}. Please check if the backend is running at http://localhost:3000`);
-            })
-            .finally(() => {
-                setScheduling(false);
+        try {
+            let url, method, body;
+
+            if (isSatisfactionVC) {
+                // Use the dedicated satisfaction VC endpoint
+                url = `http://localhost:3000/api/grievances/${grievance.id}/schedule-vc`;
+                method = 'POST';
+                body = JSON.stringify({
+                    date: date + 'T' + time,
+                    link: link,
+                    level: 'SO',
+                    performedBy: userName
+                });
+            } else {
+                // Use regular grievance update for normal hearings
+                url = `http://localhost:3000/api/grievances/${grievance.id}`;
+                method = 'PUT';
+                body = JSON.stringify({
+                    hearingDate: date,
+                    hearingTime: time,
+                    hearingLink: link,
+                    performedBy: userName
+                });
+            }
+
+            console.log(`Scheduling VC (${isSatisfactionVC ? 'Satisfaction' : 'Regular'}):`, url);
+
+            const res = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body
             });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Failed to schedule');
+
+            if (data.success) {
+                setGeneratedLink(link);
+                const msg = `VC_SCHEDULED:::${grievance.grievanceId}:::${date} at ${time}:::${link}`;
+                sendMockWhatsApp(msg);
+                if (onSuccess) onSuccess();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        } catch (err) {
+            console.error('VC SCHEDULING ERROR:', err);
+            alert(`Error: ${err.message}`);
+        } finally {
+            setScheduling(false);
+        }
     };
 
     const copyToClipboard = () => {

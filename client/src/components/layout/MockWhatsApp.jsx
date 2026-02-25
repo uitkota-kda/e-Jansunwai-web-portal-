@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, X, Send } from 'lucide-react';
+import { MessageSquare, X, Send, Video } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const MockWhatsApp = () => {
@@ -29,6 +29,7 @@ const MockWhatsApp = () => {
     // Listen for custom events dispatched by other components (e.g., successful submission)
     useEffect(() => {
         const handleNewMessage = (event) => {
+            // Store raw text for state persistence and dynamic rendering
             const newMessage = {
                 id: Date.now(),
                 text: event.detail.text,
@@ -38,7 +39,6 @@ const MockWhatsApp = () => {
             };
             setMessages(prev => {
                 const updated = [...prev, newMessage];
-                // Ensure we save immediately here too just in case
                 localStorage.setItem('kda_chat_history', JSON.stringify(updated));
                 return updated;
             });
@@ -53,6 +53,276 @@ const MockWhatsApp = () => {
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, isOpen]);
+
+    const handleWebFeedback = async (id, status, messageId) => {
+        // 1. Simluate User Reply
+        const userMsg = {
+            id: Date.now(),
+            text: status === 'SATISFIED' ? 'YES - I am satisfied' : 'NO - I am not satisfied',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            sender: 'You',
+            isUser: true
+        };
+
+        // Update state: Add user message AND update the prompt message to DONE
+        setMessages(prev => {
+            const updated = prev.map(msg => {
+                if (msg.id === messageId) {
+                    if (msg.text.startsWith('RESOLVED_PROMPT:::')) {
+                        // Convert prompt to done state to disable buttons
+                        return { ...msg, text: msg.text.replace('RESOLVED_PROMPT:::', 'RESOLVED_DONE:::') };
+                    } else if (msg.text.startsWith('VC_DONE_PROMPT:::')) {
+                        return { ...msg, text: msg.text.replace('VC_DONE_PROMPT:::', 'VC_DONE_FINISHED:::') };
+                    }
+                }
+                return msg;
+            });
+            const finalUpdated = [...updated, userMsg];
+            localStorage.setItem('kda_chat_history', JSON.stringify(finalUpdated));
+            return finalUpdated;
+        });
+
+        // 2. Update Backend
+        try {
+            await fetch(`http://localhost:3000/api/grievances/${id}/feedback`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    feedback: status === 'SATISFIED' ? 'YES' : 'NO'
+                })
+            });
+        } catch (e) {
+            console.error("Failed to update status", e);
+        }
+
+        // 3. Bot Reply
+        setTimeout(() => {
+            let replyProtocolString;
+
+            // Determine response based on previous prompt type (inferred or stored? We can infer from current satisfactionStatus update but here we are in frontend)
+            // Wait, we need to know WHICH prompt we are replying to. 
+            // In MockWhatsApp we don't strictly know if it was initial or post-VC unless we track it or check the message ID.
+            // However, the user prompted "VC_DONE_PROMPT" will result in a call to backend.
+
+            // Simplification: We will just check if text was SATISFIED or NOT_SATISFIED.
+            // But we need a special message for Post-VC Dissatisfaction ("Visit KDA Office").
+            // One way is to check the message that was clicked.
+            const originalPrompt = messages.find(m => m.id === messageId)?.text || "";
+            const isPostVc = originalPrompt.includes('VC_DONE_PROMPT');
+
+            if (status === 'SATISFIED') {
+                replyProtocolString = "FEEDBACK_RESPONSE_SATISFIED:::";
+            } else {
+                if (isPostVc) {
+                    replyProtocolString = "FEEDBACK_RESPONSE_VISIT_OFFICE:::";
+                } else {
+                    replyProtocolString = "FEEDBACK_RESPONSE_UNSATISFIED:::";
+                }
+            }
+
+            const botMsg = {
+                id: Date.now() + 1,
+                text: replyProtocolString,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                sender: 'KDA Official',
+                isUser: false
+            };
+            setMessages(prev => {
+                const updated = [...prev, botMsg];
+                localStorage.setItem('kda_chat_history', JSON.stringify(updated));
+                return updated;
+            });
+        }, 1000);
+    };
+
+    const linkify = (text) => {
+        if (typeof text !== 'string') return text;
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        return text.split(urlRegex).map((part, i) => {
+            if (part.match(urlRegex)) {
+                return (
+                    <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline break-all">
+                        {part}
+                    </a>
+                );
+            }
+            return part;
+        });
+    };
+
+    const renderMessageContent = (msg) => {
+        if (typeof msg.text !== 'string') return msg.text;
+
+        if (msg.text.startsWith('RESOLVED_PROMPT:::')) {
+            const parts = msg.text.split(':::');
+            const uuid = parts[1];
+            const displayId = parts[2];
+            const remarks = parts[3];
+
+            return (
+                <div className="space-y-2">
+                    <p className="font-bold text-sm text-gray-900">Grievance Resolved ✅</p>
+                    <p className="text-xs">ID: {displayId}</p>
+                    <p className="text-xs italic text-gray-600">"{remarks}"</p>
+                    <div className="my-2 border-t border-gray-200 pt-2">
+                        <p className="text-xs font-semibold mb-2 text-center">Are you satisfied with the resolution?</p>
+                        <div className="flex space-x-2">
+                            <button
+                                onClick={() => handleWebFeedback(uuid, 'SATISFIED', msg.id)}
+                                className="flex-1 bg-green-600 text-white py-2 rounded-lg text-xs font-bold hover:bg-green-700 transition shadow-sm active:scale-95"
+                            >
+                                YES
+                            </button>
+                            <button
+                                onClick={() => handleWebFeedback(uuid, 'NOT_SATISFIED', msg.id)}
+                                className="flex-1 bg-red-600 text-white py-2 rounded-lg text-xs font-bold hover:bg-red-700 transition shadow-sm active:scale-95"
+                            >
+                                NO
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        if (msg.text.startsWith('RESOLVED_DONE:::')) {
+            const parts = msg.text.split(':::');
+            const displayId = parts[2];
+            const remarks = parts[3];
+            return (
+                <div className="space-y-2 opacity-70 grayscale">
+                    <p className="font-bold text-sm text-gray-800">Grievance Resolved ✅</p>
+                    <p className="text-xs">ID: {displayId}</p>
+                    <p className="text-xs italic text-gray-500">"{remarks}"</p>
+                    <div className="my-2 border-t border-gray-300 pt-2">
+                        <div className="bg-gray-100 p-2 rounded text-center text-xs font-bold text-gray-500 border border-gray-200">
+                            Feedback Submitted
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        if (msg.text === 'FEEDBACK_RESPONSE_SATISFIED:::') {
+            return (
+                <div className="space-y-2 text-center">
+                    <div className="w-full h-24 bg-green-50 rounded-lg flex items-center justify-center mb-2 text-4xl animate-bounce">
+                        🎉
+                    </div>
+                    <p className="font-bold text-green-800 text-sm">Thank you for your feedback!</p>
+                    <p className="text-xs">We are glad we could help. We welcome you to use our services again.</p>
+                    <p className="text-[10px] text-gray-500 font-bold mt-1">Jai Hind 🇮🇳</p>
+                </div>
+            );
+        }
+
+        if (msg.text === 'FEEDBACK_RESPONSE_UNSATISFIED:::') {
+            return (
+                <div className="space-y-2">
+                    <p className="font-bold text-red-800 text-sm">We've received your feedback.</p>
+                    <p className="text-xs">We are sorry you are not satisfied with the resolution. Your feedback has been recorded and an officer will review it shortly. They may contact you for a Video Conference to better understand your concerns.</p>
+                </div>
+            );
+        }
+
+        // Add handling for VC_SCHEDULED
+        if (msg.text.startsWith('VC_SCHEDULED:::')) {
+            const parts = msg.text.split(':::');
+            // Format: VC_SCHEDULED:::GrievanceID:::DateTime:::Link
+            const displayId = parts[1];
+            const dateTime = parts[2];
+            const link = parts[3];
+
+            return (
+                <div className="space-y-2 bg-blue-50 p-2 rounded-lg border border-blue-100">
+                    <p className="font-bold text-blue-900 text-sm flex items-center">
+                        <span className="mr-2">📅</span> VC Scheduled
+                    </p>
+                    <p className="text-xs text-blue-800">An officer has scheduled a Video Conference regarding your grievance <strong>{displayId}</strong>.</p>
+
+                    <div className="mt-2 bg-white p-2 rounded border border-blue-100">
+                        <p className="text-[10px] uppercase font-bold text-gray-500">Date & Time</p>
+                        <p className="text-sm font-semibold text-gray-800">{dateTime}</p>
+                    </div>
+
+                    <div className="mt-1 bg-white p-2 rounded border border-blue-100">
+                        <p className="text-[10px] uppercase font-bold text-gray-500">Meeting Link</p>
+                        <a href={link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 underline font-medium break-all block">
+                            {link}
+                        </a>
+                    </div>
+
+                    <p className="text-[10px] text-blue-600 italic text-center mt-1">
+                        Please be ready 5 mins before the time.
+                    </p>
+                </div>
+            );
+        }
+
+
+        // Add handling for VC_DONE_PROMPT
+        if (msg.text.startsWith('VC_DONE_PROMPT:::')) {
+            const parts = msg.text.split(':::');
+            const uuid = parts[1];
+            const displayId = parts[2];
+
+            return (
+                <div className="space-y-2">
+                    <p className="font-bold text-sm text-gray-900">Video Conference Completed 🎥</p>
+                    <p className="text-xs">ID: {displayId}</p>
+                    <p className="text-xs text-gray-600">The officer has marked the Video Conference as complete.</p>
+                    <div className="my-2 border-t border-gray-200 pt-2">
+                        <p className="text-xs font-semibold mb-2 text-center">Are you satisfied with the resolution now?</p>
+                        <div className="flex space-x-2">
+                            <button
+                                onClick={() => handleWebFeedback(uuid, 'SATISFIED', msg.id)}
+                                className="flex-1 bg-green-600 text-white py-2 rounded-lg text-xs font-bold hover:bg-green-700 transition shadow-sm active:scale-95"
+                            >
+                                YES
+                            </button>
+                            <button
+                                onClick={() => handleWebFeedback(uuid, 'NOT_SATISFIED', msg.id)}
+                                className="flex-1 bg-red-600 text-white py-2 rounded-lg text-xs font-bold hover:bg-red-700 transition shadow-sm active:scale-95"
+                            >
+                                NO
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        if (msg.text.startsWith('VC_DONE_FINISHED:::')) {
+            const parts = msg.text.split(':::');
+            const displayId = parts[2];
+            return (
+                <div className="space-y-2 opacity-70 grayscale">
+                    <p className="font-bold text-sm text-gray-800">VC Feedback Submitted ✅</p>
+                    <p className="text-xs">ID: {displayId}</p>
+                    <div className="my-2 border-t border-gray-300 pt-2">
+                        <div className="bg-gray-100 p-2 rounded text-center text-xs font-bold text-gray-500 border border-gray-200">
+                            Response Recorded
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        if (msg.text === 'FEEDBACK_RESPONSE_VISIT_OFFICE:::') {
+            return (
+                <div className="space-y-2">
+                    <p className="font-bold text-orange-800 text-sm">Please visit KDA Office.</p>
+                    <p className="text-xs">Since you are still not satisfied after the Video Conference, we request you to kindly visit the KDA office in person for further resolution.</p>
+                    <div className="bg-orange-50 p-2 rounded text-[10px] text-orange-700 border border-orange-200 mt-1 font-semibold flex items-start">
+                        <span className="mr-1">📍</span> Kota Development Authority, C.A.D. Circle, Kota, Rajasthan- 324009
+                    </div>
+                </div>
+            );
+        }
+
+        // Handle React Elements (legacy) or plain text
+        return <p className="text-sm text-gray-800 leading-relaxed">{linkify(msg.text)}</p>;
+    };
 
     const handleSend = (e) => {
         e.preventDefault();
@@ -188,7 +458,7 @@ const MockWhatsApp = () => {
                                     ? 'bg-[#dcf8c6] rounded-tr-none'
                                     : 'bg-white rounded-tl-none'
                                     }`}>
-                                    <p className="text-sm text-gray-800 leading-relaxed">{msg.text}</p>
+                                    {renderMessageContent(msg)}
                                     <span className="text-[10px] text-gray-500 block text-right mt-1 opacity-70">
                                         {msg.time}
                                     </span>

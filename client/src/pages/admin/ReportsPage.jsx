@@ -60,7 +60,12 @@ const ReportsPage = () => {
     const [dateFilter, setDateFilter] = useState('7');
 
     useEffect(() => {
-        fetch('http://localhost:3000/api/grievances')
+        const tokenData = localStorage.getItem('kda_user');
+        const token = tokenData ? JSON.parse(tokenData).token : null;
+
+        fetch('http://localhost:3000/api/grievances', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
             .then(res => res.json())
             .then(data => {
                 if (data.success) {

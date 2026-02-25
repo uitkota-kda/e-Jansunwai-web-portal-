@@ -19,9 +19,18 @@ const UserManagementPage = () => {
         email: ''
     });
 
+    // Helper to get token
+    const getToken = () => {
+        const stored = localStorage.getItem('kda_user');
+        return stored ? JSON.parse(stored).token : null;
+    };
+
     const fetchUsers = async () => {
         try {
-            const res = await fetch('http://localhost:3000/api/users');
+            const token = getToken();
+            const res = await fetch('http://localhost:3000/api/users', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             const data = await res.json();
             if (data.success) setUsers(data.data);
         } catch (err) {
@@ -41,9 +50,13 @@ const UserManagementPage = () => {
         const method = editUser ? 'PUT' : 'POST';
 
         try {
+            const token = getToken();
             const res = await fetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify(formData)
             });
             const data = await res.json();
@@ -64,7 +77,11 @@ const UserManagementPage = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('Are you sure you want to delete this user?')) return;
         try {
-            const res = await fetch(`http://localhost:3000/api/users/${id}`, { method: 'DELETE' });
+            const token = getToken();
+            const res = await fetch(`http://localhost:3000/api/users/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             const data = await res.json();
             if (data.success) {
                 setUsers(users.filter(u => u.id !== id));
@@ -244,6 +261,12 @@ const UserManagementPage = () => {
                                         <option value="EXECUTIVE_ENGINEER">Executive Engineer</option>
                                         <option value="OPERATOR">Data Entry Operator</option>
                                         <option value="SUPER_ADMIN">Admin</option>
+                                        <option value="REVENUE_OFFICIAL">Deputy Commissioner (Revenue)</option>
+                                        <option value="PLANNING_OFFICIAL">Director Planning</option>
+                                        <option value="LEGAL_OFFICIAL">Director Legal</option>
+                                        <option value="FINANCE_OFFICIAL">Director Finance</option>
+                                        <option value="DIRECTOR">Director (Generic)</option>
+                                        <option value="COMMISSIONER">Commissioner</option>
                                     </select>
                                 </div>
 

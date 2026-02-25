@@ -169,6 +169,11 @@ exports.updateGrievance = async (req, res) => {
             });
         }
 
+        if (!updates || typeof updates !== 'object') {
+            console.error('[UpdateGrievance] 400: Invalid update data received:', updates);
+            return res.status(400).json({ success: false, message: 'Invalid update data' });
+        }
+
         // Handle Status Update & Logging
         const statusChanged = updates.status && updates.status !== grievance.status;
 
@@ -179,13 +184,18 @@ exports.updateGrievance = async (req, res) => {
             'escalationLevel', 'assignedOfficer', 'assignedSection', 'assignedZone',
             'expectedDate', 'remarks', 'eeRemarks', 'eeStatus', 'eeActionDate', 'directorNote',
             'isReopened', 'reopenedBy', 'reopenReason',
-            'satisfactionStatus', 'citizenFeedback', 'vcScheduledDate', 'vcMeetingLink', 'vcOfficerName'
+            'satisfactionStatus', 'citizenFeedback', 'vcScheduledDate', 'vcMeetingLink'
         ];
         const dataToUpdate = {};
         validFields.forEach(field => {
             if (updates[field] !== undefined) {
-                // Allow null values to be set (e.g. for clearing assignments)
-                dataToUpdate[field] = updates[field];
+                // Robustness check: if the field is expected to be a string but is an object, try to extract the value
+                // (This handles cases where the frontend sends the whole state object into a single field)
+                if (typeof updates[field] === 'object' && updates[field] !== null && updates[field][field] !== undefined) {
+                    dataToUpdate[field] = String(updates[field][field]);
+                } else {
+                    dataToUpdate[field] = updates[field];
+                }
             }
         });
 
@@ -207,22 +217,16 @@ exports.updateGrievance = async (req, res) => {
             }
         });
 
-        // --- Satisfaction Workflow Trigger ---
-        // If status becomes RESOLVED (and wasn't before) for valid sources, initiate feedback loop.
         if (updates.status === 'RESOLVED' && grievance.status !== 'RESOLVED') {
-            const isEligibleSource = ['WHATSAPP', 'WEB_PORTAL'].includes(grievance.source);
-            if (isEligibleSource) {
-                await prisma.grievance.update({
-                    where: { id: updatedGrievance.id },
-                    data: { satisfactionStatus: 'PENDING_FEEDBACK' }
-                });
-                // In a real system, trigger WhatsApp message here: "Are you satisfied? Yes/No"
-                console.log(`[Satisfaction Workflow] Triggered feedback request for ${grievance.grievanceId}`);
-            }
+            await prisma.grievance.update({
+                where: { id: updatedGrievance.id },
+                data: { satisfactionStatus: 'PENDING_FEEDBACK' }
+            });
+            console.log(`[Satisfaction Workflow] Triggered feedback request for ${grievance.grievanceId}`);
         }
 
         // Add to ActionLog if status changed or specific action taken
-        if (statusChanged || updates.remarks || attachmentPath) {
+        if (statusChanged || updates.remarks || updates.eeRemarks || attachmentPath) {
             let actionText = updates.status || 'Updated';
             if (updates.status === 'PENDING' && !updates.assignedSection && grievance.assignedSection) {
                 actionText = `Returned by ${grievance.assignedSection}`;
@@ -233,7 +237,7 @@ exports.updateGrievance = async (req, res) => {
                     grievanceId: updatedGrievance.id,
                     action: actionText,
                     performedBy: updates.performedBy || 'Officer',
-                    attachmentPath: attachmentPath || (updates.remarks ? `Remarks: ${updates.remarks}` : null),
+                    attachmentPath: attachmentPath || (updates.eeRemarks ? `Official Report: ${updates.eeRemarks}` : (updates.remarks ? `Remarks: ${updates.remarks}` : null)),
                     timestamp: new Date()
                 }
             });
@@ -269,18 +273,17 @@ exports.submitFeedback = async (req, res) => {
         let actionLog = '';
 
         // Case 1: Initial Feedback
-        if (grievance.satisfactionStatus === 'PENDING_FEEDBACK') {
+        if (!grievance.satisfactionStatus || grievance.satisfactionStatus === 'PENDING_FEEDBACK') {
             if (feedback === 'YES') {
                 newStatus = 'SATISFIED';
-                actionLog = 'Citizen marked SATISFIED via WhatsApp';
-                // Trigger Thanks Message
+                actionLog = 'Citizen marked SATISFIED';
             } else {
                 newStatus = 'NOT_SATISFIED';
                 actionLog = 'Citizen marked NOT SATISFIED. Flagged for Section Officer VC.';
             }
         }
         // Case 2: Post-VC Feedback (Section Officer)
-        else if (grievance.satisfactionStatus === 'VC_DONE_SO') {
+        else if (grievance.satisfactionStatus === 'VC_DONE_SO' || grievance.satisfactionStatus === 'VC_SCHEDULED_SO') {
             if (feedback === 'YES') {
                 newStatus = 'SATISFIED_POST_VC_SO';
                 actionLog = 'Citizen SATISFIED after Section Officer VC.';
@@ -290,20 +293,28 @@ exports.submitFeedback = async (req, res) => {
             }
         }
 
+        let mainStatus = grievance.status;
+        if (feedback === 'NO') {
+            mainStatus = 'UNSATISFIED';
+        } else if (feedback === 'YES') {
+            mainStatus = 'RESOLVED';
+        }
+
         await prisma.grievance.update({
             where: { id: grievance.id },
             data: {
                 satisfactionStatus: newStatus,
-                citizenFeedback: feedback
+                citizenFeedback: feedback,
+                status: mainStatus
             }
         });
 
         await prisma.actionLog.create({
             data: {
                 grievanceId: grievance.id,
-                action: 'Citizen Feedback: ' + feedback,
+                action: feedback === 'NO' ? 'Marked as UNSATISFIED' : 'Marked as RESOLVED (Satisfied)',
                 performedBy: 'Citizen',
-                attachmentPath: actionLog
+                attachmentPath: `Feedback: ${feedback}. ${actionLog}`
             }
         });
 
@@ -394,13 +405,79 @@ exports.completeSatisfactionVC = async (req, res) => {
     }
 };
 
-// List all Grievances
+// List all Grievances (Protected & Filtered by Role)
 exports.listGrievances = async (req, res) => {
     try {
+        // req.user is set by verifyToken middleware (contains id, role, section)
+        // We fetch the full user to get 'zone' or other details if needed, 
+        // and to ensure we have the latest role/section info.
+        if (!req.user || !req.user.id) {
+            console.error('[listGrievances] No user in request');
+            return res.status(401).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.id }
+        });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        let whereClause = {};
+
+        // ROLE-BASED FILTERING
+        // 1. Moderators / Admins / Commissioners: See ALL
+        if (['MODERATOR', 'ADMIN', 'COMMISSIONER'].includes(user.role)) {
+            // No filter, they see everything
+            whereClause = {};
+        }
+        // 2. Section Officers (Directors, DCs, etc.): See ONLY assigned to their section (or zone if they have one)
+        else if (user.role === 'SECTION_OFFICER') {
+            if (user.zone && user.section) {
+                whereClause = {
+                    OR: [
+                        { assignedSection: user.section },
+                        { assignedZone: user.zone }
+                    ]
+                };
+            } else if (user.section) {
+                whereClause = {
+                    assignedSection: user.section
+                };
+            } else if (user.zone) {
+                whereClause = {
+                    assignedZone: user.zone
+                };
+            } else {
+                whereClause = { id: 'NO_MATCH' };
+            }
+        }
+        // 3. Sub-Officials (Executive Engineers, etc.): See ONLY assigned to their Zone
+        else if (['EXECUTIVE_ENGINEER', 'REVENUE_OFFICIAL', 'PLANNING_OFFICIAL', 'LEGAL_OFFICIAL', 'FINANCE_OFFICIAL'].includes(user.role)) {
+            if (user.zone) {
+                whereClause = {
+                    assignedZone: user.zone
+                };
+            } else {
+                whereClause = { id: 'NO_MATCH' };
+            }
+        }
+        // 4. Fallback for other roles (e.g., OPERATOR) - limit visibility or show all? 
+        // Assuming Operators might need to see all or specific logic. 
+        // For safety, let's restriction to configured roles. 
+        // If role is unknown, maybe show nothing?
+        // Let's assume other roles can't login or verified upstream.
+
+        console.log(`[listGrievances] User: ${user.username} (${user.role}), Section: ${user.section}, Zone: ${user.zone}`);
+        console.log(`[listGrievances] Filter:`, JSON.stringify(whereClause));
+
         const grievances = await prisma.grievance.findMany({
+            where: whereClause,
             orderBy: { createdAt: 'desc' },
             include: { logs: { orderBy: { timestamp: 'desc' } } }
         });
+
         res.json({ success: true, data: grievances });
     } catch (error) {
         console.error('List error:', error);

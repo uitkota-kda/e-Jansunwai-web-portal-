@@ -11,8 +11,7 @@ const roleConfig = {
         subtitle: 'Master Control & User Management',
         color: 'from-kota-900 to-kota-700',
         btnColor: 'bg-kota-600 hover:bg-kota-700 shadow-kota-200',
-        icon: Shield,
-        hint: 'superadmin / kda123'
+        icon: Shield
     },
     COMMISSIONER: {
         id: 'COMMISSIONER',
@@ -21,8 +20,7 @@ const roleConfig = {
         subtitle: 'High Level Monitoring & Review',
         color: 'from-purple-900 to-purple-700',
         btnColor: 'bg-purple-600 hover:bg-purple-700 shadow-purple-200',
-        icon: Briefcase,
-        hint: 'commissioner / 123'
+        icon: Briefcase
     },
     MODERATOR: {
         id: 'MODERATOR',
@@ -31,8 +29,7 @@ const roleConfig = {
         subtitle: 'Grievance Review & Assignment',
         color: 'from-kota-900 to-kota-700',
         btnColor: 'bg-kota-600 hover:bg-kota-700 shadow-kota-200',
-        icon: Shield,
-        hint: 'admin / kda123'
+        icon: Shield
     },
     OFFICIALS: {
         id: 'OFFICIALS',
@@ -41,8 +38,7 @@ const roleConfig = {
         subtitle: 'Directors & Deputy Commissioners',
         color: 'from-kota-900 to-kota-700',
         btnColor: 'bg-kota-600 hover:bg-kota-700 shadow-kota-200',
-        icon: Briefcase,
-        hint: 'dc1, eng, fin, plan, legal / kda123'
+        icon: Briefcase
     },
     ZONES: {
         id: 'ZONES',
@@ -51,8 +47,7 @@ const roleConfig = {
         subtitle: 'Zone Level Grievance Redressal',
         color: 'from-kota-900 to-kota-700',
         btnColor: 'bg-kota-600 hover:bg-kota-700 shadow-kota-200',
-        icon: Briefcase,
-        hint: 'ee_crf, ee_housing ... / kda123'
+        icon: Briefcase
     },
     REVENUE: {
         id: 'REVENUE',
@@ -61,8 +56,7 @@ const roleConfig = {
         subtitle: 'TDR & AAO Revenue Desk',
         color: 'from-kota-900 to-kota-700',
         btnColor: 'bg-kota-600 hover:bg-kota-700 shadow-kota-200',
-        icon: Briefcase,
-        hint: 'tdr_zone1, aao_south ... / kda123'
+        icon: Briefcase
     },
     PLANNING: {
         id: 'PLANNING',
@@ -71,8 +65,7 @@ const roleConfig = {
         subtitle: 'DTP & ATP Team',
         color: 'from-kota-900 to-kota-700',
         btnColor: 'bg-kota-600 hover:bg-kota-700 shadow-kota-200',
-        icon: Briefcase,
-        hint: 'dtp, atp_zone1 ... / kda123'
+        icon: Briefcase
     },
     LEGAL: {
         id: 'LEGAL',
@@ -81,8 +74,7 @@ const roleConfig = {
         subtitle: 'DLR, SLO & JLO Desk',
         color: 'from-kota-900 to-kota-700',
         btnColor: 'bg-kota-600 hover:bg-kota-700 shadow-kota-200',
-        icon: Shield,
-        hint: 'dlr_legal, slo_legal, jlo_legal / kda123'
+        icon: Shield
     },
     FINANCE: {
         id: 'FINANCE',
@@ -91,8 +83,7 @@ const roleConfig = {
         subtitle: 'Assistant Accounts Officers',
         color: 'from-kota-900 to-kota-700',
         btnColor: 'bg-kota-600 hover:bg-kota-700 shadow-kota-200',
-        icon: Briefcase,
-        hint: 'aao_fin1, aao_fin2 / kda123'
+        icon: Briefcase
     },
     OPERATORS: {
         id: 'OPERATORS',
@@ -101,8 +92,7 @@ const roleConfig = {
         subtitle: 'Physical & Voice Grievance Entry',
         color: 'from-kota-900 to-kota-700',
         btnColor: 'bg-kota-600 hover:bg-kota-700 shadow-kota-200',
-        icon: Terminal,
-        hint: 'operator / kda123'
+        icon: Terminal
     }
 };
 
@@ -121,8 +111,16 @@ const LoginPage = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const { login } = useAuth();
+    const { login, logout, user } = useAuth();
     const navigate = useNavigate();
+
+    // Logout if accessing login page while authenticated (e.g. via Back button)
+    useEffect(() => {
+        if (user) {
+            logout();
+        }
+    }, []); // Empty dependency array ensures this runs only on mount
+
 
     useEffect(() => {
         if (roleParam && roleConfig[roleParam]) {
@@ -228,14 +226,7 @@ const LoginPage = () => {
                             <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                         </button>
 
-                        <div className="flex flex-col items-center space-y-4 pt-4 border-t border-slate-100 mt-4">
-                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">Sample Identification</p>
-                            <div className="bg-slate-50 px-4 py-3 rounded-xl w-full text-center border border-slate-100">
-                                <p className="text-xs font-bold text-slate-500 font-mono">
-                                    {currentConfig.hint}
-                                </p>
-                            </div>
-                        </div>
+
                     </form>
                 </div>
 
