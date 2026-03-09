@@ -1,0 +1,38 @@
+# dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# environment variables
+.env
+.env.*
+
+# logs
+logs
+*.log
+
+# debug output
+*_debug_*
+*_output*
+
+# database backups
+*.sql
+
+# json dumps
+*_dump.json
+*_output.json
+
+# build files
+dist/
+build/
+
+# uploads
+uploads/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# editor
+.vscode/
+.idea/

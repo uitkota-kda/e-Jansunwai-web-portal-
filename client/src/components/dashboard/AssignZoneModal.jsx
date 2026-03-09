@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -78,7 +79,7 @@ const AssignZoneModal = ({ grievance, onClose, onAssign }) => {
                 const tokenData = localStorage.getItem('kda_user');
                 const token = tokenData ? JSON.parse(tokenData).token : null;
 
-                const response = await fetch(`http://localhost:3000/api/users/role/${config.role}`, {
+                const response = await fetch(`${API_BASE_URL}/users/role/${config.role}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const result = await response.json();

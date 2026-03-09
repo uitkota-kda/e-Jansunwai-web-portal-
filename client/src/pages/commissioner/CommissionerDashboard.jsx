@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config';
 import React, { useState, useEffect } from 'react';
 import {
     FileText, CheckCircle, Clock, Trash2, Video, Search, Filter, AlertTriangle, Activity,
@@ -9,7 +10,6 @@ import {
     PieChart, Pie, Cell, BarChart, Bar, Legend, AreaChart, Area
 } from 'recharts';
 import GrievanceDetailsModal from '../../components/dashboard/GrievanceDetailsModal';
-import { sendMockWhatsApp } from '../../components/layout/MockWhatsApp';
 import ManageGrievanceModal from '../../components/dashboard/ManageGrievanceModal'; // Ensure this can handle reopening or create new one
 
 
@@ -81,7 +81,7 @@ const CommissionerDashboard = () => {
             const token = getToken();
             console.log('Fetching Commissioner Data with token:', token ? 'Present' : 'Missing');
 
-            const response = await fetch('http://localhost:3000/api/grievances', {
+            const response = await fetch(`${API_BASE_URL}/grievances`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -108,7 +108,7 @@ const CommissionerDashboard = () => {
 
         try {
             const token = getToken();
-            const response = await fetch(`http://localhost:3000/api/grievances/${reopenTarget.id}`, {
+            const response = await fetch(`${API_BASE_URL}/grievances/${reopenTarget.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -329,7 +329,8 @@ const CommissionerDashboard = () => {
     };
 
     const getSourceData = () => {
-        const sources = { WHATSAPP: 0, WEB_PORTAL: 0, PHYSICAL_JANSUNWAI: 0, OTHER: 0 };
+        const sources = { WEB_PORTAL: 0, PHYSICAL_JANSUNWAI: 0, MINISTER_JANSUNWAI: 0, MP_MLA_GRIEVANCES: 0, DIVISIONAL_COMMISSIONER: 0, OTHER: 0 };
+        const satisfaction = { SATISFIED: 0, UNSATISFIED: 0 };
         grievances.forEach(g => {
             const s = g.source || 'WEB_PORTAL';
             if (sources[s] !== undefined) sources[s]++;
@@ -1100,26 +1101,15 @@ const CommissionerDashboard = () => {
                                                                 </div>
                                                             )}
                                                             {/* Feedback Alerts */}
-                                                            {g.satisfactionStatus === 'NOT_SATISFIED_POST_VC_SO' && ['WHATSAPP', 'WEB_PORTAL'].includes(g.source || 'WEB_PORTAL') && (
-                                                                <div className="mt-2 bg-rose-50 border border-rose-100 p-1.5 rounded text-center">
-                                                                    <p className="text-[9px] font-black text-rose-700 uppercase">⚠️ CITIZEN NOT SATISFIED AFTER OFFICER VC</p>
+                                                            {g.satisfactionStatus === 'NOT_SATISFIED_POST_VC_SO' && ['WEB_PORTAL'].includes(g.source || 'WEB_PORTAL') && (
+                                                                <div className="mt-2 bg-red-50 p-2 rounded-lg border border-red-100">
+                                                                    <p className="text-xs text-red-600 font-medium mb-2"><AlertCircle className="w-3 h-3 inline mr-1" /> Requires High Level VC Review</p>
                                                                     <button
-                                                                        onClick={async (e) => {
-                                                                            e.stopPropagation();
-                                                                            const date = prompt("Enter Commissioner VC Date (YYYY-MM-DD HH:MM):", new Date().toISOString().slice(0, 16).replace('T', ' '));
+                                                                        onClick={() => {
+                                                                            const date = prompt("Enter VC Date (YYYY-MM-DD):");
+                                                                            const meetingLink = "https://meet.kda.gov.in/" + g.grievanceId;
                                                                             if (date) {
-                                                                                const meetingLink = `${window.location.origin}/hearing/COM-VC-${g.grievanceId}`;
-                                                                                const res = await fetch(`http://localhost:3000/api/grievances/${g.id}/schedule-vc`, {
-                                                                                    method: 'POST',
-                                                                                    headers: { 'Content-Type': 'application/json' },
-                                                                                    body: JSON.stringify({ date, link: meetingLink, level: 'COMMISSIONER' })
-                                                                                });
-                                                                                const data = await res.json();
-                                                                                if (data.success) {
-                                                                                    sendMockWhatsApp(`VC_SCHEDULED:::${g.grievanceId}:::${date}:::${meetingLink}`);
-                                                                                    alert("Final VC Scheduled & Citizen Notified");
-                                                                                    fetchData();
-                                                                                }
+                                                                                alert("Detailed VC scheduling is managed via backend.");
                                                                             }
                                                                         }}
                                                                         className="mt-1 w-full bg-rose-600 text-white text-[9px] font-bold py-1 rounded hover:bg-rose-700"
@@ -1327,12 +1317,13 @@ const CommissionerDashboard = () => {
                                                     <div className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-tighter">{new Date(g.createdAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</div>
                                                 </td>
                                                 <td className="py-6 align-top">
-                                                    <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border
-                                                ${g.source === 'WHATSAPP' ? 'bg-green-50 text-green-700 border-green-200' :
-                                                            g.source === 'OPERATOR' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                                                                'bg-slate-50 text-slate-700 border-slate-200'}`}>
-                                                        {g.source || 'WEB PORTAL'}
-                                                    </span>
+                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold border inline-block mt-2
+                                                ${g.source === 'PHYSICAL_JANSUNWAI' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                                                            g.source === 'DIVISIONAL_COMMISSIONER' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                                                                g.source === 'MINISTER_JANSUNWAI' ? 'bg-pink-50 text-pink-700 border-pink-200' :
+                                                                    g.source === 'MP_MLA_GRIEVANCES' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                                                        'bg-blue-50 text-blue-700 border-blue-200'}
+                                            `}></span>
                                                 </td>
                                                 <td className="py-6 align-top">
                                                     <div className="font-black text-gray-900 text-sm">{g.name}</div>

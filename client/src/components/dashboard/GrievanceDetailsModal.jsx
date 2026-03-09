@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { X, User, Phone, MapPin, FileText, Calendar, Clock, Download, Video, Activity } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { SERVER_URL } from '../../config';
 
 const GrievanceDetailsModal = ({ grievance, onClose }) => {
     const navigate = useNavigate();
@@ -179,12 +180,14 @@ const GrievanceDetailsModal = ({ grievance, onClose }) => {
                         <div>
                             <div className="flex items-center gap-2">
                                 <h3 className="text-lg font-bold text-gray-900">Grievance Details</h3>
-                                <span className={`px-2 py-0.5 rounded-[4px] text-[10px] font-black uppercase tracking-widest border
-                                    ${grievance.source === 'WHATSAPP' ? 'bg-green-50 text-green-700 border-green-200' :
-                                        grievance.source === 'OPERATOR' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                                            'bg-slate-50 text-slate-700 border-slate-200'}`}>
-                                    {grievance.source?.replace('_', ' ') || 'WEB PORTAL'}
-                                </span>
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-bold border
+                                    ${grievance.source === 'PHYSICAL_JANSUNWAI' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                                        grievance.source === 'DIVISIONAL_COMMISSIONER' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                                            grievance.source === 'MINISTER_JANSUNWAI' ? 'bg-pink-50 text-pink-700 border-pink-200' :
+                                                grievance.source === 'MP_MLA_GRIEVANCES' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                                    grievance.source === 'WEB_PORTAL' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                                        'bg-gray-50 text-gray-700 border-gray-200'}
+                                `}></span>
                             </div>
                             <p className="text-sm text-gray-500 font-mono">{grievance.grievanceId}</p>
                         </div>
@@ -395,7 +398,7 @@ const GrievanceDetailsModal = ({ grievance, onClose }) => {
                                                 </span>
                                             </div>
                                             <a
-                                                href={`http://localhost:3000/${grievance.attachmentPath}`}
+                                                href={`${SERVER_URL}/${grievance.attachmentPath}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition"
@@ -409,7 +412,7 @@ const GrievanceDetailsModal = ({ grievance, onClose }) => {
                                         {!grievance.attachmentPath.toLowerCase().endsWith('.pdf') && (
                                             <div className="p-2 flex justify-center bg-gray-100 min-h-[100px] items-center">
                                                 <img
-                                                    src={`http://localhost:3000/${grievance.attachmentPath}`}
+                                                    src={`${SERVER_URL}/${grievance.attachmentPath}`}
                                                     alt="Attachment Preview"
                                                     className="max-h-48 rounded-lg shadow-sm object-contain"
                                                     onError={(e) => {
@@ -483,49 +486,9 @@ const GrievanceDetailsModal = ({ grievance, onClose }) => {
                                             {grievance.satisfactionStatus.replace(/_/g, ' ')}
                                         </span>
                                     </div>
-
-                                    {/* Simulation Controls - For Demo Purpose Only */}
-                                    {(grievance.satisfactionStatus === 'PENDING_FEEDBACK' || grievance.satisfactionStatus === 'VC_DONE_SO') && (
-                                        <div className="mt-4 pt-4 border-t border-purple-200">
-                                            <p className="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-2">Developer Simulation: Simulate WhatsApp Reply</p>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={async () => {
-                                                        try {
-                                                            const response = await fetch(`http://localhost:3000/api/grievances/${grievance.id}/feedback`, {
-                                                                method: 'POST',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify({ feedback: 'YES' })
-                                                            });
-                                                            if (response.ok) { window.alert("Simulated: Citizen replied YES"); onClose(); }
-                                                        } catch (e) { alert("Error simulating feedback"); }
-                                                    }}
-                                                    className="flex-1 py-2 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 transition"
-                                                >
-                                                    Simulate "YES, SATISFIED"
-                                                </button>
-                                                <button
-                                                    onClick={async () => {
-                                                        try {
-                                                            const response = await fetch(`http://localhost:3000/api/grievances/${grievance.id}/feedback`, {
-                                                                method: 'POST',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify({ feedback: 'NO' })
-                                                            });
-                                                            if (response.ok) { window.alert("Simulated: Citizen replied NO"); onClose(); }
-                                                        } catch (e) { alert("Error simulating feedback"); }
-                                                    }}
-                                                    className="flex-1 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700 transition"
-                                                >
-                                                    Simulate "NO, UNSATISFIED"
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         )}
-
                     </div>
 
                     {/* Footer Actions */}
@@ -543,9 +506,9 @@ const GrievanceDetailsModal = ({ grievance, onClose }) => {
                             Print Details
                         </button>
                     </div>
-                </div>
-            </div>
-        </div>
+                </div >
+            </div >
+        </div >
     );
 };
 

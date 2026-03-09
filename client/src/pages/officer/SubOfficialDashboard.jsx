@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config';
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -6,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import GrievanceDetailsModal from '../../components/dashboard/GrievanceDetailsModal';
-import { sendMockWhatsApp } from '../../components/layout/MockWhatsApp';
+
 
 // Enhanced Clickable Stat Card with Active State
 const StatCard = ({ title, value, color, icon: Icon, onClick, isActive }) => (
@@ -52,7 +53,7 @@ const SubOfficialDashboard = () => {
     const fetchGrievances = async () => {
         try {
             const token = getToken();
-            const response = await fetch('http://localhost:3000/api/grievances', {
+            const response = await fetch(`${API_BASE_URL}/grievances`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -111,7 +112,7 @@ const SubOfficialDashboard = () => {
             }
 
             const token = getToken();
-            const response = await fetch(`http://localhost:3000/api/grievances/${selectedGrievance.id}`, {
+            const response = await fetch(`${API_BASE_URL}/grievances/${selectedGrievance.id}`, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${token}` },
                 body: formData
@@ -121,7 +122,7 @@ const SubOfficialDashboard = () => {
 
             if (data.success) {
                 if (actionType === 'RESOLVE') {
-                    sendMockWhatsApp(`RESOLVED_PROMPT:::${selectedGrievance.id}:::${selectedGrievance.grievanceId}:::${remarks}`);
+
                 }
                 alert(`Grievance ${actionType === 'RETURN' ? 'returned' : (actionType === 'RESOLVE' ? 'resolved' : 'replied')} successfully.`);
                 setRemarks('');

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config';
 import React, { useState, useEffect } from 'react';
 import {
     FileText, CheckCircle, Clock, Trash2, ChevronLeft, ChevronRight,
@@ -6,7 +7,6 @@ import {
 } from 'lucide-react';
 import ManageGrievanceModal from '../../components/dashboard/ManageGrievanceModal';
 import GrievanceDetailsModal from '../../components/dashboard/GrievanceDetailsModal';
-import { sendMockWhatsApp } from '../../components/layout/MockWhatsApp';
 import ScheduleVCModal from '../../components/dashboard/ScheduleVCModal';
 import DailyReportModal from '../../components/dashboard/DailyReportModal';
 import AssignZoneModal from '../../components/dashboard/AssignZoneModal';
@@ -79,7 +79,7 @@ const OfficerDashboard = () => {
     const fetchData = async () => {
         try {
             const token = getToken();
-            const response = await fetch('http://localhost:3000/api/grievances', {
+            const response = await fetch(`${API_BASE_URL}/grievances`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -121,7 +121,7 @@ const OfficerDashboard = () => {
                 body = JSON.stringify(updates);
             }
 
-            const response = await fetch(`http://localhost:3000/api/grievances/${id}`, {
+            const response = await fetch(`${API_BASE_URL}/grievances/${id}`, {
                 method: 'PUT',
                 headers: headers,
                 body: body
@@ -132,7 +132,7 @@ const OfficerDashboard = () => {
                     const grievance = grievances.find(g => g.id === id);
                     if (grievance) {
                         const actionReport = updates.remarks || updates.description || 'Grievance has been resolved.';
-                        sendMockWhatsApp(`RESOLVED_PROMPT:::${grievance.id}:::${grievance.grievanceId}:::${actionReport}`);
+                        // sendMockWhatsApp(`RESOLVED_PROMPT:::${grievance.id}:::${grievance.grievanceId}:::${actionReport}`); // Removed
                     }
                 }
                 alert('Status Updated Successfully');
@@ -165,7 +165,7 @@ const OfficerDashboard = () => {
 
             const token = getToken();
 
-            const response = await fetch(`http://localhost:3000/api/grievances/${grievance.id}`, {
+            const response = await fetch(`${API_BASE_URL}/grievances/${grievance.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -447,6 +447,7 @@ const OfficerDashboard = () => {
                                 <option value="PHYSICAL_JANSUNWAI">Physical Jansunwai</option>
                                 <option value="MINISTER_JANSUNWAI">Minister Jansunwai</option>
                                 <option value="MP_MLA_GRIEVANCES">MP/MLA Grievances</option>
+                                <option value="DIVISIONAL_COMMISSIONER">Divisional Commissioner</option>
                                 <option value="MISCELLANEOUS">Miscellaneous</option>
                             </select>
                             {/* Director Engineering specific filter dropdown */}
@@ -685,14 +686,14 @@ const OfficerDashboard = () => {
                                                             <button
                                                                 onClick={async () => {
                                                                     if (window.confirm("Mark VC as done? This will trigger a satisfaction check for the citizen.")) {
-                                                                        const res = await fetch(`http://localhost:3000/api/grievances/${g.id}/complete-vc`, {
+                                                                        const res = await fetch(`${API_BASE_URL}/grievances/${g.id}/complete-vc`, {
                                                                             method: 'POST',
                                                                             headers: { 'Content-Type': 'application/json' },
                                                                             body: JSON.stringify({ level: 'SO' })
                                                                         });
                                                                         const data = await res.json();
                                                                         if (data.success) {
-                                                                            sendMockWhatsApp(`VC_DONE_PROMPT:::${g.id}:::${g.grievanceId}`);
+                                                                            // sendMockWhatsApp(`VC_DONE_PROMPT:::${g.id}:::${g.grievanceId}`); // Removed
                                                                             alert("VC marked as Done. Citizen has been asked for feedback.");
                                                                             fetchData();
                                                                         }

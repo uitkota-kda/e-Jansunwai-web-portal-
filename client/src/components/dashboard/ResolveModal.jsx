@@ -1,6 +1,6 @@
+import { API_BASE_URL } from '../../config';
 import React, { useState, useRef } from 'react';
 import { X, CheckCircle, Upload, File } from 'lucide-react';
-import { sendMockWhatsApp } from '../layout/MockWhatsApp';
 
 const ResolveModal = ({ grievance, onClose, onResolve }) => {
     const [actionReport, setActionReport] = useState('');
@@ -33,7 +33,7 @@ const ResolveModal = ({ grievance, onClose, onResolve }) => {
             const tokenData = localStorage.getItem('kda_user');
             const token = tokenData ? JSON.parse(tokenData).token : null;
 
-            const response = await fetch(`http://localhost:3000/api/grievances/${grievance.id}`, {
+            const response = await fetch(`${API_BASE_URL}/grievances/${grievance.id}`, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${token}` },
                 body: submitData
@@ -43,7 +43,6 @@ const ResolveModal = ({ grievance, onClose, onResolve }) => {
 
             if (data.success) {
                 const successMessage = `RESOLVED_PROMPT:::${grievance.id}:::${grievance.grievanceId}:::${actionReport}`;
-                sendMockWhatsApp(successMessage);
 
                 onResolve(grievance.id); // Update parent state
                 onClose();

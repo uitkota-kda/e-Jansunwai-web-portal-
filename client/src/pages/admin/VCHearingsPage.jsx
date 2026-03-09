@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config';
 import React, { useState } from 'react';
 import { Video, Calendar, Clock, User, Link as LinkIcon, ExternalLink, Plus } from 'lucide-react';
 import ScheduleVCModal from '../../components/dashboard/ScheduleVCModal';
@@ -12,7 +13,7 @@ const VCHearingsPage = () => {
         const tokenData = localStorage.getItem('kda_user');
         const token = tokenData ? JSON.parse(tokenData).token : null;
 
-        fetch('http://localhost:3000/api/grievances', {
+        fetch(`${API_BASE_URL}/grievances`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
             .then(res => res.json())

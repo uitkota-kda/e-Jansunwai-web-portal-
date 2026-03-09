@@ -10,6 +10,7 @@ import {
     SECTIONS,
     OFFICER_LIST
 } from '../../constants';
+import { SERVER_URL } from '../../config';
 
 const ManageGrievanceModal = ({ grievance, onClose, onSave }) => {
     const { user } = useAuth();
@@ -201,7 +202,7 @@ const ManageGrievanceModal = ({ grievance, onClose, onSave }) => {
                                         </div>
                                         <div className="flex items-center space-x-2">
                                             <a
-                                                href={`http://localhost:3000/${grievance.attachmentPath.replace(/\\/g, '/')}`}
+                                                href={`${SERVER_URL}/${grievance.attachmentPath.replace(/\\/g, '/')}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="p-1.5 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors"
@@ -214,7 +215,7 @@ const ManageGrievanceModal = ({ grievance, onClose, onSave }) => {
                                     {/\.(jpg|jpeg|png|gif)$/i.test(grievance.attachmentPath) && (
                                         <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 flex justify-center">
                                             <img
-                                                src={`http://localhost:3000/${grievance.attachmentPath.replace(/\\/g, '/')}`}
+                                                src={`${SERVER_URL}/${grievance.attachmentPath.replace(/\\/g, '/')}`}
                                                 alt="Preview"
                                                 className="max-h-40 object-contain"
                                             />

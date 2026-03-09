@@ -1,6 +1,6 @@
+import { API_BASE_URL } from '../../config';
 import React, { useState, useRef } from 'react';
 import { Send, Upload, User, MapPin, FileText, AlertCircle, File, X, Camera, CheckCircle2, LayoutDashboard, Phone } from 'lucide-react';
-import { sendMockWhatsApp } from '../../components/layout/MockWhatsApp';
 
 const OperatorGrievanceForm = () => {
     const [formData, setFormData] = useState({
@@ -70,7 +70,7 @@ const OperatorGrievanceForm = () => {
                 submitData.append('attachment', formData.files);
             }
 
-            const response = await fetch('http://localhost:3000/api/grievances', {
+            const response = await fetch(`${API_BASE_URL}/grievances`, {
                 method: 'POST',
                 body: submitData,
             });
@@ -120,6 +120,7 @@ const OperatorGrievanceForm = () => {
         { id: 'PHYSICAL_JANSUNWAI', label: 'Physical Jansunwai' },
         { id: 'MINISTER_JANSUNWAI', label: 'Minister Jansunwai' },
         { id: 'MP_MLA_GRIEVANCES', label: 'MP/MLA Grievances' },
+        { id: 'DIVISIONAL_COMMISSIONER', label: 'Divisional Commissioner' },
         { id: 'MISCELLANEOUS', label: 'Miscellaneous' }
     ];
 
@@ -156,7 +157,7 @@ const OperatorGrievanceForm = () => {
                             <label className="block text-sm font-bold text-gray-700 mb-3 ml-1 uppercase tracking-wider">
                                 Complaint Source (शिकायत का स्रोत) <span className="text-red-500">*</span>
                             </label>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                                 {sources.map((src) => (
                                     <button
                                         key={src.id}

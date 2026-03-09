@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../config';
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, AlertTriangle, ArrowRight, Video, Calendar } from 'lucide-react';
@@ -26,7 +27,7 @@ const TrackingPage = () => {
         setLoading(true);
 
         try {
-            const response = await fetch(`http://localhost:3000/api/grievances/${encodeURIComponent(query)}`);
+            const response = await fetch(`${API_BASE_URL}/grievances/${encodeURIComponent(query)}`);
             const data = await response.json();
 
             if (data.success) {
@@ -248,7 +249,7 @@ const TrackingPage = () => {
                                         <div className="flex flex-col sm:flex-row justify-center gap-4">
                                             <button
                                                 onClick={async () => {
-                                                    const res = await fetch(`http://localhost:3000/api/grievances/${statusData.id}/feedback`, {
+                                                    const res = await fetch(`${API_BASE_URL}/grievances/${statusData.id}/feedback`, {
                                                         method: 'POST',
                                                         headers: { 'Content-Type': 'application/json' },
                                                         body: JSON.stringify({ feedback: 'YES' })
@@ -265,7 +266,7 @@ const TrackingPage = () => {
                                             </button>
                                             <button
                                                 onClick={async () => {
-                                                    const res = await fetch(`http://localhost:3000/api/grievances/${statusData.id}/feedback`, {
+                                                    const res = await fetch(`${API_BASE_URL}/grievances/${statusData.id}/feedback`, {
                                                         method: 'POST',
                                                         headers: { 'Content-Type': 'application/json' },
                                                         body: JSON.stringify({ feedback: 'NO' })

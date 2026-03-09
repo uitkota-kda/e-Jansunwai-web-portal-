@@ -1,6 +1,6 @@
+import { API_BASE_URL } from '../../config';
 import React, { useState, useEffect } from 'react';
-import { X, MapPin, Calendar, Clock, Send, AlertCircle } from 'lucide-react';
-import { sendMockWhatsApp } from '../layout/MockWhatsApp';
+import { X, MapPin, Calendar, Clock, AlertCircle } from 'lucide-react';
 
 const ScheduleSiteVisitModal = ({ isOpen, onClose, grievances, initialGrievance, onScheduleSuccess }) => {
     const [selectedId, setSelectedId] = useState(initialGrievance?.grievanceId || '');
@@ -41,7 +41,7 @@ const ScheduleSiteVisitModal = ({ isOpen, onClose, grievances, initialGrievance,
             const tokenData = localStorage.getItem('kda_user');
             const token = tokenData ? JSON.parse(tokenData).token : null;
 
-            const response = await fetch(`http://localhost:3000/api/grievances/${grievance.id}`, {
+            const response = await fetch(`${API_BASE_URL}/grievances/${grievance.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -56,7 +56,6 @@ const ScheduleSiteVisitModal = ({ isOpen, onClose, grievances, initialGrievance,
 
             const data = await response.json();
             if (data.success) {
-                sendMockWhatsApp(`Namaste! A site visit for your grievance ${selectedId} has been scheduled for ${visitDate} at ${visitTime}. Our team will contact you. - KDA`);
                 setSuccess(true);
                 if (onScheduleSuccess) onScheduleSuccess();
                 setTimeout(() => {

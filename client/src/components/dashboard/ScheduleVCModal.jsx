@@ -1,8 +1,8 @@
+import { API_BASE_URL } from '../../config';
 import React, { useState } from 'react';
-import { X, Video, Calendar, Clock, Copy, Link as LinkIcon } from 'lucide-react';
-import { sendMockWhatsApp } from '../layout/MockWhatsApp';
+import { X, Video, Calendar, Clock, Link as LinkIcon, AlertCircle } from 'lucide-react';
 
-const ScheduleVCModal = ({ grievance, onClose, onSuccess }) => {
+const ScheduleVCModal = ({ grievance, onClose, onSchedule }) => {
     const [date, setDate] = useState('');
     const [time, setTime] = useState('');
     const [generatedLink, setGeneratedLink] = useState('');
@@ -12,8 +12,8 @@ const ScheduleVCModal = ({ grievance, onClose, onSuccess }) => {
         e.preventDefault();
         setScheduling(true);
 
-        const meetingId = `KDA-${grievance.grievanceId}-${Date.now().toString().slice(-4)}`;
-        const link = `${window.location.origin}/hearing/${meetingId}`;
+        const meetingId = `KDA - ${grievance.grievanceId} -${Date.now().toString().slice(-4)} `;
+        const link = `${window.location.origin} /hearing/${meetingId} `;
 
         const tokenData = localStorage.getItem('kda_user');
         const tokenToken = tokenData ? JSON.parse(tokenData) : null;
@@ -29,7 +29,7 @@ const ScheduleVCModal = ({ grievance, onClose, onSuccess }) => {
 
             if (isSatisfactionVC) {
                 // Use the dedicated satisfaction VC endpoint
-                url = `http://localhost:3000/api/grievances/${grievance.id}/schedule-vc`;
+                url = `${API_BASE_URL}/grievances/${grievance.id}/schedule-vc`;
                 method = 'POST';
                 body = JSON.stringify({
                     date: date + 'T' + time,
@@ -39,7 +39,7 @@ const ScheduleVCModal = ({ grievance, onClose, onSuccess }) => {
                 });
             } else {
                 // Use regular grievance update for normal hearings
-                url = `http://localhost:3000/api/grievances/${grievance.id}`;
+                url = `${API_BASE_URL}/grievances/${grievance.id}`;
                 method = 'PUT';
                 body = JSON.stringify({
                     hearingDate: date,
@@ -65,9 +65,7 @@ const ScheduleVCModal = ({ grievance, onClose, onSuccess }) => {
 
             if (data.success) {
                 setGeneratedLink(link);
-                const msg = `VC_SCHEDULED:::${grievance.grievanceId}:::${date} at ${time}:::${link}`;
-                sendMockWhatsApp(msg);
-                if (onSuccess) onSuccess();
+                if (onSchedule) onSchedule();
             } else {
                 alert('Error: ' + data.message);
             }
@@ -150,8 +148,7 @@ const ScheduleVCModal = ({ grievance, onClose, onSuccess }) => {
                                     <LinkIcon className="w-8 h-8" />
                                 </div>
                                 <div>
-                                    <h4 className="text-xl font-bold text-gray-900">Meeting Scheduled!</h4>
-                                    <p className="text-gray-500 text-sm mt-1">Notification sent to citizen via WhatsApp.</p>
+                                    <h4 className="font-bold text-gray-900">Virtual Hearing Scheduled Successfully</h4>
                                 </div>
 
                                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 break-all">
@@ -163,7 +160,7 @@ const ScheduleVCModal = ({ grievance, onClose, onSuccess }) => {
                                         onClick={copyToClipboard}
                                         className="flex-1 border border-gray-300 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center"
                                     >
-                                        <Copy className="w-4 h-4 mr-2" /> Copy Link
+                                        Copy Link
                                     </button>
                                     <button
                                         onClick={onClose}

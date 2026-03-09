@@ -95,13 +95,6 @@ const LandingPage = () => {
                         color={{ bg: 'bg-emerald-50', text: 'text-emerald-600' }}
                     />
                     <ServiceCard
-                        title="WhatsApp Support"
-                        description="Connect with our automated bot for quick submission and updates via WhatsApp."
-                        icon={MessageCircle}
-                        onClick={() => window.open('https://wa.me/91XXXXXXXXXX', '_blank')}
-                        color={{ bg: 'bg-green-50', text: 'text-green-600' }}
-                    />
-                    <ServiceCard
                         title="Guidelines & FAQ"
                         description="Understand the grievance redressal process, timelines, and escalation matrix."
                         icon={HelpCircle}
@@ -124,7 +117,7 @@ const LandingPage = () => {
                     <h3 className="text-2xl font-bold text-gray-900 mb-4">How it works?</h3>
                     <ul className="space-y-4">
                         {[
-                            'Submit grievance via Web or WhatsApp.',
+                            'Submit grievance via Web Portal.',
                             'Receive a unique Tracking ID instantly.',
                             'Concerned Officer files action taken report within 7 days.',
                             'If not resolved, auto-escalation to senior officials.',

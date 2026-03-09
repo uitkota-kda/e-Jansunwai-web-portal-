@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config';
 import React, { useRef, useState, useEffect } from 'react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -63,7 +64,7 @@ const ReportsPage = () => {
         const tokenData = localStorage.getItem('kda_user');
         const token = tokenData ? JSON.parse(tokenData).token : null;
 
-        fetch('http://localhost:3000/api/grievances', {
+        fetch(`${API_BASE_URL}/grievances`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
             .then(res => res.json())
@@ -183,6 +184,7 @@ const ReportsPage = () => {
                         <option value="PHYSICAL_JANSUNWAI">Physical Jansunwai</option>
                         <option value="MINISTER_JANSUNWAI">Minister Jansunwai</option>
                         <option value="MP_MLA_GRIEVANCES">MP/MLA Grievances</option>
+                        <option value="DIVISIONAL_COMMISSIONER">Divisional Commissioner</option>
                         <option value="MISCELLANEOUS">Miscellaneous</option>
                     </select>
                     <select

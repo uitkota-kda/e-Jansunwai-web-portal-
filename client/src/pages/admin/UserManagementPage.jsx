@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config';
 import React, { useState, useEffect } from 'react';
 import { UserPlus, Key, Trash2, Edit2, Shield, Briefcase, Terminal, Search } from 'lucide-react';
 import { ENGINEERING_ZONES } from '../../constants';
@@ -28,7 +29,7 @@ const UserManagementPage = () => {
     const fetchUsers = async () => {
         try {
             const token = getToken();
-            const res = await fetch('http://localhost:3000/api/users', {
+            const res = await fetch(`${API_BASE_URL}/users`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -46,7 +47,7 @@ const UserManagementPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const url = editUser ? `http://localhost:3000/api/users/${editUser.id}` : 'http://localhost:3000/api/users';
+        const url = editUser ? `${API_BASE_URL}/users/${editUser.id}` : `${API_BASE_URL}/users`;
         const method = editUser ? 'PUT' : 'POST';
 
         try {
@@ -78,7 +79,7 @@ const UserManagementPage = () => {
         if (!window.confirm('Are you sure you want to delete this user?')) return;
         try {
             const token = getToken();
-            const res = await fetch(`http://localhost:3000/api/users/${id}`, {
+            const res = await fetch(`${API_BASE_URL}/users/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

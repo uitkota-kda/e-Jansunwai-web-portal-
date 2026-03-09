@@ -1,11 +1,11 @@
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import PublicLayout from './components/layout/PublicLayout';
 import DashboardLayout from './components/layout/DashboardLayout';
-import LandingPage from './pages/LandingPage';
 import GrievanceForm from './pages/GrievanceForm';
+import GrievanceOtpLogin from './pages/GrievanceOtpLogin';
+import LandingPage from './pages/LandingPage';
 import TrackingPage from './pages/TrackingPage';
 import ModeratorDashboard from './pages/moderator/ModeratorDashboard';
-import MockWhatsApp from './components/layout/MockWhatsApp';
 
 import { AuthProvider } from './context/AuthContext';
 import LoginPage from './pages/auth/LoginPage';
@@ -68,7 +68,8 @@ function App() {
           {/* Public Routes */}
           <Route element={<PublicLayout />}>
             <Route path="/" element={<LandingPage />} />
-            <Route path="/submit" element={<GrievanceForm />} />
+            <Route path="/submit" element={<GrievanceOtpLogin />} />
+            <Route path="/register-grievance" element={<GrievanceForm />} />
             <Route path="/track" element={<TrackingPage />} />
             <Route path="/login" element={<LoginPage />} />
           </Route>
@@ -94,7 +95,6 @@ function App() {
             </Route>
           </Route>
         </Routes>
-        <MockWhatsApp />
       </AuthProvider>
     </Router>
   );

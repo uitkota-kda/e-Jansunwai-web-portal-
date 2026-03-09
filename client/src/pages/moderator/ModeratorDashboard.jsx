@@ -1,10 +1,10 @@
+import { API_BASE_URL } from '../../config';
 import React, { useState, useEffect } from 'react';
 import { FileText, CheckCircle, Clock, AlertTriangle, Video, Paperclip, Trash2, XCircle, Activity, AlertCircle, ChevronLeft, ChevronRight, ChevronsRight, Search, Settings, Printer, CornerDownLeft, Flag, ShieldAlert } from 'lucide-react';
 import GrievanceDetailsModal from '../../components/dashboard/GrievanceDetailsModal';
 import ManageGrievanceModal from '../../components/dashboard/ManageGrievanceModal';
 import DailyReportModal from '../../components/dashboard/DailyReportModal';
 
-import { sendMockWhatsApp } from '../../components/layout/MockWhatsApp';
 
 const StatCard = ({ title, value, icon: Icon, color, onClick, isActive }) => (
     <button
@@ -49,7 +49,7 @@ const ModeratorDashboard = () => {
     const fetchGrievances = async () => {
         try {
             const token = getToken();
-            const response = await fetch('http://localhost:3000/api/grievances', {
+            const response = await fetch(`${API_BASE_URL}/grievances`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -105,7 +105,7 @@ const ModeratorDashboard = () => {
                 headers['Authorization'] = `Bearer ${token}`;
             }
 
-            const response = await fetch(`http://localhost:3000/api/grievances/${grievance.id}`, {
+            const response = await fetch(`${API_BASE_URL}/grievances/${grievance.id}`, {
                 method: 'PUT',
                 headers: headers,
                 body: body
@@ -118,12 +118,10 @@ const ModeratorDashboard = () => {
                 setManageGrievance(null);
 
                 // Notifications (Moved after successful state update)
-                if (grievance.source === 'WEB_PORTAL') {
-                    if (updates.status === 'REJECTED') {
-                        sendMockWhatsApp(`UPDATE: Your grievance ${grievance.grievanceId} has been rejected.\n\nReason: ${updates.remarks || 'No specific reason provided.'}`);
-                    } else if (updates.status === 'ACCEPTED') {
-                        sendMockWhatsApp(`UPDATE: Your grievance ${grievance.grievanceId} has been accepted and assigned to ${updates.assignedSection}.`);
-                    }
+                if (updates.status === 'REJECTED') {
+                    console.log(`UPDATE: Your grievance ${grievance.grievanceId} has been rejected.\n\nReason: ${updates.remarks || 'No specific reason provided.'}`);
+                } else if (updates.status === 'IN_PROGRESS' && updates.assignedSection) {
+                    console.log(`UPDATE: Your grievance ${grievance.grievanceId} has been accepted and assigned to ${updates.assignedSection}.`);
                 }
                 alert('Grievance updated successfully!');
             }
@@ -297,6 +295,7 @@ const ModeratorDashboard = () => {
                                 <option value="PHYSICAL_JANSUNWAI">Physical Jansunwai</option>
                                 <option value="MINISTER_JANSUNWAI">Minister Jansunwai</option>
                                 <option value="MP_MLA_GRIEVANCES">MP/MLA Grievances</option>
+                                <option value="DIVISIONAL_COMMISSIONER">Divisional Commissioner</option>
                                 <option value="MISCELLANEOUS">Miscellaneous</option>
                             </select>
                         </div>

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../config';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { ENGINEERING_ZONES } from '../constants';
 
@@ -20,7 +21,7 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (username, password) => {
         try {
-            const response = await fetch('http://localhost:3000/api/users/login', {
+            const response = await fetch(`${API_BASE_URL}/users/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password })
@@ -63,6 +64,7 @@ export const AuthProvider = ({ children }) => {
                 setUser(userData);
                 localStorage.setItem('kda_user', JSON.stringify(userData));
                 return { success: true };
+            } else {
                 return { success: false, message: result.message || 'Invalid credentials' };
             }
         } catch (err) {

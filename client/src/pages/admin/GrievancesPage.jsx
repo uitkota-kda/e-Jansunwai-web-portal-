@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../config';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Search, Filter, Eye, Trash2, CornerDownLeft, Video } from 'lucide-react';
@@ -23,7 +24,7 @@ const GrievancesPage = () => {
 
     useEffect(() => {
         const token = getToken();
-        fetch('http://localhost:3000/api/grievances', {
+        fetch(`${API_BASE_URL}/grievances`, {
             headers: { 'Authorization': `Bearer ${token}` }
         })
             .then(res => res.json())
@@ -73,7 +74,7 @@ const GrievancesPage = () => {
             body = JSON.stringify(updates);
         }
 
-        fetch(`http://localhost:3000/api/grievances/${grievance.id}`, {
+        fetch(`${API_BASE_URL}/grievances/${grievance.id}`, {
             method: 'PUT',
             headers: headers,
             body: body
@@ -170,10 +171,11 @@ const GrievancesPage = () => {
                         className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-kota-500 outline-none bg-white font-medium"
                     >
                         <option value="ALL">All Sources</option>
-                        <option value="WEB_PORTAL">Via Citizen</option>
+                        <option value="WEB_PORTAL">Web Portal</option>
                         <option value="PHYSICAL_JANSUNWAI">Physical Jansunwai</option>
                         <option value="MINISTER_JANSUNWAI">Minister Jansunwai</option>
                         <option value="MP_MLA_GRIEVANCES">MP/MLA Grievances</option>
+                        <option value="DIVISIONAL_COMMISSIONER">Divisional Commissioner</option>
                         <option value="MISCELLANEOUS">Miscellaneous</option>
                     </select>
                     <select

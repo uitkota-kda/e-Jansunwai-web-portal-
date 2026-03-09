@@ -5,6 +5,11 @@ async function main() {
     const username = 'tdr_zone1';
     const user = await prisma.user.findUnique({ where: { username } });
 
+    if (!user) {
+        console.error('User not found:', username);
+        return;
+    }
+
     console.log('User Profile:', JSON.stringify({
         username: user.username,
         role: user.role,
