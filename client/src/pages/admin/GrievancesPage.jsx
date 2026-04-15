@@ -1,7 +1,7 @@
 import { API_BASE_URL } from '../../config';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Search, Filter, Eye, Trash2, CornerDownLeft, Video } from 'lucide-react';
+import { Search, Filter, Eye, Trash2, CornerDownLeft } from 'lucide-react';
 import GrievanceDetailsModal from '../../components/dashboard/GrievanceDetailsModal';
 import ManageGrievanceModal from '../../components/dashboard/ManageGrievanceModal';
 
@@ -48,10 +48,6 @@ const GrievancesPage = () => {
         );
     };
 
-
-
-
-
     const handleStatusUpdate = (id, updates) => {
         const grievance = grievances.find(g => g.id === id);
         if (!grievance) return;
@@ -97,9 +93,6 @@ const GrievancesPage = () => {
             });
     };
 
-
-
-
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 10;
 
@@ -131,17 +124,12 @@ const GrievancesPage = () => {
         }
     };
 
-    // Helper function to check if grievance was returned to moderator
     const isReturnedGrievance = (grievance) => {
-        // Check if it was returned by officer (REASSIGN action - status back to PENDING with remarks)
         const wasReassigned = grievance.status === 'PENDING' &&
             !grievance.assignedSection &&
             grievance.remarks &&
             grievance.remarks.length > 0;
-
-        // Check if it was returned by EE
         const returnedByEE = grievance.eeStatus === 'RETURNED';
-
         return wasReassigned || returnedByEE;
     };
 
@@ -154,7 +142,6 @@ const GrievancesPage = () => {
                 </div>
 
                 <div className="flex items-center space-x-3">
-
                     <div className="relative">
                         <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
                         <input
@@ -226,9 +213,6 @@ const GrievancesPage = () => {
                                                     <CornerDownLeft className="w-3 h-3 mr-0.5" /> RETURNED
                                                 </span>
                                             )}
-                                            {g.hearingLink && (
-                                                <Video className="w-4 h-4 text-orange-500" title="VC Scheduled" />
-                                            )}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
@@ -293,7 +277,6 @@ const GrievancesPage = () => {
                                         >
                                             <Eye className="w-4 h-4" />
                                         </button>
-
                                     </td>
                                 </tr>
                             )) : (
@@ -308,7 +291,6 @@ const GrievancesPage = () => {
                 </div>
             </div>
 
-            {/* Pagination Controls - Centered */}
             {filteredGrievances.length > ITEMS_PER_PAGE && (
                 <div className="flex flex-col justify-center items-center mt-6 gap-3 pb-8">
                     <div className="flex items-center space-x-2">
@@ -319,7 +301,6 @@ const GrievancesPage = () => {
                         >
                             Back
                         </button>
-
                         <div className="flex items-center space-x-1">
                             {Array.from({ length: Math.ceil(filteredGrievances.length / ITEMS_PER_PAGE) }, (_, i) => i + 1).map((page) => (
                                 <button
@@ -334,7 +315,6 @@ const GrievancesPage = () => {
                                 </button>
                             ))}
                         </div>
-
                         <button
                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredGrievances.length / ITEMS_PER_PAGE)))}
                             disabled={currentPage === Math.ceil(filteredGrievances.length / ITEMS_PER_PAGE)}
@@ -343,30 +323,23 @@ const GrievancesPage = () => {
                             Next
                         </button>
                     </div>
-                    <div className="text-sm text-gray-500 font-medium">
-                        <span className="font-semibold text-gray-700">{((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredGrievances.length)}</span> of <span className="font-semibold text-gray-700">{filteredGrievances.length}</span> Results
-                    </div>
                 </div>
             )}
 
-            {
-                selectedGrievance && (
-                    <GrievanceDetailsModal
-                        grievance={selectedGrievance}
-                        onClose={() => setSelectedGrievance(null)}
-                    />
-                )
-            }
+            {selectedGrievance && (
+                <GrievanceDetailsModal
+                    grievance={selectedGrievance}
+                    onClose={() => setSelectedGrievance(null)}
+                />
+            )}
 
-            {
-                selectedManageGrievance && (
-                    <ManageGrievanceModal
-                        grievance={selectedManageGrievance}
-                        onClose={() => setSelectedManageGrievance(null)}
-                        onSave={handleStatusUpdate}
-                    />
-                )
-            }
+            {selectedManageGrievance && (
+                <ManageGrievanceModal
+                    grievance={selectedManageGrievance}
+                    onClose={() => setSelectedManageGrievance(null)}
+                    onSave={handleStatusUpdate}
+                />
+            )}
         </div >
     );
 };

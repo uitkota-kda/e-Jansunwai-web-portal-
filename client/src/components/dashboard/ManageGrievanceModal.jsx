@@ -166,7 +166,7 @@ const ManageGrievanceModal = ({ grievance, onClose, onSave }) => {
                                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${grievance.status === 'PENDING' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
                                         {grievance.status}
                                     </span>
-                                    {grievance.subStatus && (
+                                    {grievance.subStatus && grievance.subStatus !== 'SUB_SUBMITTED' && (
                                         <span className="mt-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
                                             {(grievance.subStatus === 'ASSIGNED_TO_EE' || grievance.subStatus === 'ASSIGNED_TO_SUB')
                                                 ? `Assigned to ${grievance.assignedZone || 'Official'}`

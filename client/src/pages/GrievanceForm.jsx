@@ -1,17 +1,37 @@
 import { API_BASE_URL } from '../config';
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Send, Upload, User, MapPin, FileText, AlertCircle, File, X, Camera, CheckCircle2, PhoneCall } from 'lucide-react';
+import { Send, Upload, User, MapPin, FileText, AlertCircle, File, X, Camera, CheckCircle2, PhoneCall, LayoutDashboard } from 'lucide-react';
 
 const GrievanceForm = () => {
     const location = useLocation();
     const navigate = useNavigate();
+
+    const SUBJECTS = [
+        "Sports", "Boundary wall", "Tree Guards", "Transfer of Names", "Subdivision/Reconstitution of Plots",
+        "Street Light", "Service-related Issues of Personnel", "Road Cutting Permission", "Reservation of Community Centre",
+        "Regularisation of Kachi Basti", "Refund of Earnest/Security Money", "Payment of work", "No Dues", "NOC",
+        "Issue of Possession Letter", "Issue of Lease Deed/Patta", "Development and maintenance of Park",
+        "Copies of Documents/Maps", "Complaint of Personnel", "Compensation of Acquired Land",
+        "Change of Land Use/Land Conversion", "Approval of Layout Plan", "Approval of Building Plan",
+        "Approval of 90A Applications", "Sale Permission", "Lease Exemption Certificate",
+        "Land Allotment (As per policy 2015)", "General Section", "Housing Construction Related",
+        "Town Planning-BPC (BP)", "Town Planning-BPC (LP)", "Town Planning-Projects", "Town Planning-Master Plan",
+        "Legal and Court", "Strip of Land", "Illegal Construction (Non-Scheme)", "Illegal Construction (Scheme)",
+        "Encroachment Removal (Non-Scheme)", "Encroachment Removal (Scheme)", "Sewerage Construction / Repair",
+        "Drainage Construction / Repair", "Road Construction / Repair", "CMJY", "PMJY",
+        "Drinking Water supply related issue", "Rehabilitation"
+    ];
+
+    const WARDS = Array.from({ length: 100 }, (_, i) => i + 1);
 
     const [formData, setFormData] = useState({
         name: '',
         mobile: location.state?.mobile || '',
         address: '',
         description: '',
+        subject: '',
+        wardNo: '',
         files: null
     });
 
@@ -74,6 +94,8 @@ const GrievanceForm = () => {
             submitData.append('description', formData.description);
             submitData.append('category', 'General');
             submitData.append('source', 'WEB_PORTAL');
+            submitData.append('subject', formData.subject);
+            submitData.append('wardNo', formData.wardNo);
             if (formData.files) {
                 submitData.append('attachment', formData.files);
             }
@@ -108,8 +130,6 @@ const GrievanceForm = () => {
         if (name === 'name') {
             if (!/^[a-zA-Z\s]*$/.test(value)) return;
         }
-
-
 
         setFormData(prev => ({ ...prev, [name]: value }));
     };
@@ -169,24 +189,84 @@ const GrievanceForm = () => {
                         </div>
                     </div>
 
-                    {/* Area / Colony */}
+                    <div className="grid md:grid-cols-2 gap-8">
+                        {/* Area / Colony */}
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">
+                                क्षेत्र / कॉलोनी / योजना (Area/Colony) <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <MapPin className="h-5 w-5" />
+                                </span>
+                                <input
+                                    type="text"
+                                    name="address"
+                                    required
+                                    value={formData.address}
+                                    onChange={handleChange}
+                                    className="w-full pl-10 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-gray-50"
+                                    placeholder="अपने क्षेत्र या कॉलोनी का नाम लिखें"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Ward Number */}
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">
+                                वार्ड नंबर (Ward Number) <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <LayoutDashboard className="h-5 w-5" />
+                                </span>
+                                <select
+                                    name="wardNo"
+                                    required
+                                    value={formData.wardNo}
+                                    onChange={handleChange}
+                                    className="w-full pl-10 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-gray-50 appearance-none"
+                                >
+                                    <option value="">Select Ward Number</option>
+                                    {WARDS.map(num => (
+                                        <option key={num} value={num}>Ward {num}</option>
+                                    ))}
+                                </select>
+                                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                                    <svg className="h-5 w-5 fill-current" viewBox="0 0 20 20">
+                                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Predefined Subject */}
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-2">
-                            क्षेत्र / कॉलोनी / योजना (Area/Colony) <span className="text-red-500">*</span>
+                            विषय (Subject) <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
                             <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                                <MapPin className="h-5 w-5" />
+                                <FileText className="h-5 w-5" />
                             </span>
-                            <input
-                                type="text"
-                                name="address"
+                            <select
+                                name="subject"
                                 required
-                                value={formData.address}
+                                value={formData.subject}
                                 onChange={handleChange}
-                                className="w-full pl-10 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-gray-50"
-                                placeholder="अपने क्षेत्र या कॉलोनी का नाम लिखें"
-                            />
+                                className="w-full pl-10 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-gray-50 appearance-none"
+                            >
+                                <option value="">Select Subject</option>
+                                {SUBJECTS.map(sub => (
+                                    <option key={sub} value={sub}>{sub}</option>
+                                ))}
+                            </select>
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                                <svg className="h-5 w-5 fill-current" viewBox="0 0 20 20">
+                                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                                </svg>
+                            </div>
                         </div>
                     </div>
 

@@ -1,0 +1,14 @@
+aao_revenue | REVENUE_OFFICIAL | Revenue | AAO- Kota South
+tdr_zone1 | REVENUE_OFFICIAL | Revenue | TDR Zone 1
+ee_housing | EXECUTIVE_ENGINEER | null | Housing
+operator | OPERATOR | null | null
+ee_crf | EXECUTIVE_ENGINEER | null | CRF
+admin | MODERATOR | null | null
+legal | SECTION_OFFICER | Director legal | null
+plan | SECTION_OFFICER | Director Planning | null
+fin | SECTION_OFFICER | Director Finance | null
+dc1 | SECTION_OFFICER | Deputy commissioner I | null
+superadmin | SUPER_ADMIN | null | null
+commissioner | COMMISSIONER | null | null
+eng | SECTION_OFFICER | Director Engineering | null
+dc2 | SECTION_OFFICER | Deputy commissioner II | null

@@ -1,4 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
+const { randomUUID } = require('crypto');
+const whatsappService = require('../services/whatsapp.service');
 const prisma = new PrismaClient();
 
 // Create Grievance
@@ -7,7 +9,7 @@ exports.createGrievance = async (req, res) => {
         console.log('--- Incoming Grievance Request ---');
         console.log('Body:', req.body);
 
-        const { name, mobile, address, category, description, source } = req.body;
+        const { name, mobile, address, category, description, source, subject } = req.body;
         const attachmentPath = req.file ? req.file.path.replace(/\\/g, '/') : null;
 
         // Basic Validation
@@ -47,6 +49,7 @@ exports.createGrievance = async (req, res) => {
 
         const newGrievance = await prisma.grievance.create({
             data: {
+                id: randomUUID(),
                 grievanceId,
                 name: String(name),
                 mobile: String(mobile || 'NOT_PROVIDED'),
@@ -54,6 +57,8 @@ exports.createGrievance = async (req, res) => {
                 category: String(category || 'General'),
                 description: String(description),
                 source: String(source || 'WEB_PORTAL'),
+                subject: subject ? String(subject) : null,
+                wardNo: req.body.wardNo ? parseInt(req.body.wardNo, 10) : null,
                 status: 'PENDING',
                 attachmentPath
             }
@@ -161,8 +166,8 @@ exports.updateGrievance = async (req, res) => {
             });
         }
 
-        // Prevent updates to RESOLVED or REJECTED grievances (Unless it's being re-opened)
-        if ((grievance.status === 'RESOLVED' || grievance.status === 'REJECTED') && !updates.isReopened) {
+        // Prevent updates to RESOLVED, REJECTED, or UNSATISFIED grievances (Unless it's being re-opened)
+        if ((['RESOLVED', 'REJECTED', 'UNSATISFIED'].includes(grievance.status)) && !updates.isReopened) {
             return res.status(403).json({
                 success: false,
                 message: `Cannot modify grievance. This grievance has been ${grievance.status.toLowerCase()} and is now closed.`
@@ -180,11 +185,11 @@ exports.updateGrievance = async (req, res) => {
         // Clean up updates object to only include fields present in Prisma model
         const validFields = [
             'status', 'subStatus', 'assignedToId', 'category', 'description',
-            'hearingDate', 'hearingTime', 'hearingLink', 'isEscalated',
+            'isEscalated',
             'escalationLevel', 'assignedOfficer', 'assignedSection', 'assignedZone',
             'expectedDate', 'remarks', 'eeRemarks', 'eeStatus', 'eeActionDate', 'directorNote',
             'isReopened', 'reopenedBy', 'reopenReason',
-            'satisfactionStatus', 'citizenFeedback', 'vcScheduledDate', 'vcMeetingLink'
+            'satisfactionStatus', 'citizenFeedback', 'wardNo', 'subject'
         ];
         const dataToUpdate = {};
         validFields.forEach(field => {
@@ -225,6 +230,19 @@ exports.updateGrievance = async (req, res) => {
             console.log(`[Satisfaction Workflow] Triggered feedback request for ${grievance.grievanceId}`);
         }
 
+        // WhatsApp Notification
+        if (statusChanged && updatedGrievance.mobile && updatedGrievance.mobile !== 'NOT_PROVIDED') {
+            try {
+                await whatsappService.notifyStatusUpdate(
+                    updatedGrievance.mobile,
+                    updatedGrievance.grievanceId,
+                    updatedGrievance.status
+                );
+            } catch (wsError) {
+                console.error('[WhatsApp] Notification failed:', wsError.message);
+            }
+        }
+
         // Add to ActionLog if status changed or specific action taken
         if (statusChanged || updates.remarks || updates.eeRemarks || attachmentPath) {
             let actionText = updates.status || 'Updated';
@@ -234,6 +252,7 @@ exports.updateGrievance = async (req, res) => {
 
             await prisma.actionLog.create({
                 data: {
+                    id: randomUUID(),
                     grievanceId: updatedGrievance.id,
                     action: actionText,
                     performedBy: updates.performedBy || 'Officer',
@@ -278,18 +297,8 @@ exports.submitFeedback = async (req, res) => {
                 newStatus = 'SATISFIED';
                 actionLog = 'Citizen marked SATISFIED';
             } else {
-                newStatus = 'NOT_SATISFIED';
-                actionLog = 'Citizen marked NOT SATISFIED. Flagged for Section Officer VC.';
-            }
-        }
-        // Case 2: Post-VC Feedback (Section Officer)
-        else if (grievance.satisfactionStatus === 'VC_DONE_SO' || grievance.satisfactionStatus === 'VC_SCHEDULED_SO') {
-            if (feedback === 'YES') {
-                newStatus = 'SATISFIED_POST_VC_SO';
-                actionLog = 'Citizen SATISFIED after Section Officer VC.';
-            } else {
-                newStatus = 'NOT_SATISFIED_POST_VC_SO';
-                actionLog = 'Citizen NOT SATISFIED after SO VC. Esculated to Commissioner.';
+                newStatus = 'NOT_SATISFIED_POST_VC_SO'; // Use this to trigger "Visit Office" on frontend
+                actionLog = 'Citizen marked NOT SATISFIED. Instructed to visit office for Physical Jansunwai.';
             }
         }
 
@@ -311,6 +320,7 @@ exports.submitFeedback = async (req, res) => {
 
         await prisma.actionLog.create({
             data: {
+                id: randomUUID(),
                 grievanceId: grievance.id,
                 action: feedback === 'NO' ? 'Marked as UNSATISFIED' : 'Marked as RESOLVED (Satisfied)',
                 performedBy: 'Citizen',
@@ -323,85 +333,6 @@ exports.submitFeedback = async (req, res) => {
     } catch (error) {
         console.error('Feedback error:', error);
         res.status(500).json({ success: false, message: 'Server error' });
-    }
-};
-
-// Schedule Satisfaction VC
-exports.scheduleSatisfactionVC = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { date, link, level } = req.body; // level: 'SO' or 'COMMISSIONER'
-
-        let grievance = await prisma.grievance.findUnique({ where: { id: id } });
-        if (!grievance) {
-            grievance = await prisma.grievance.findUnique({ where: { grievanceId: id } });
-        }
-
-        if (!grievance) return res.status(404).json({ success: false, message: 'Grievance not found' });
-
-        let newStatus = grievance.satisfactionStatus;
-        if (level === 'SO') newStatus = 'VC_SCHEDULED_SO';
-        if (level === 'COMMISSIONER') newStatus = 'VC_SCHEDULED_COMMISSIONER';
-
-        await prisma.grievance.update({
-            where: { id: grievance.id },
-            data: {
-                satisfactionStatus: newStatus,
-                vcScheduledDate: new Date(date),
-                vcMeetingLink: link
-            }
-        });
-
-        // Notify Citizen
-        console.log(`[VC Scheduled] Level: ${level}, Date: ${date}, Link: ${link}`);
-
-        await prisma.actionLog.create({
-            data: {
-                grievanceId: grievance.id,
-                action: `VC Scheduled (${level})`,
-                performedBy: req.body.performedBy || 'System',
-                attachmentPath: `Date: ${date}, Link: ${link}`
-            }
-        });
-
-        res.json({ success: true, message: 'VC Scheduled' });
-
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Error scheduling VC' });
-    }
-};
-
-// Complete VC and Trigger Next Feedback
-exports.completeSatisfactionVC = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { level } = req.body; // 'SO' or 'COMMISSIONER'
-
-        let grievance = await prisma.grievance.findUnique({ where: { id: id } });
-        if (!grievance) {
-            grievance = await prisma.grievance.findUnique({ where: { grievanceId: id } });
-        }
-
-        if (!grievance) return res.status(404).json({ success: false, message: 'Grievance not found' });
-
-        let newStatus = grievance.satisfactionStatus;
-
-        if (level === 'SO') {
-            newStatus = 'VC_DONE_SO'; // Now explicitly waiting for feedback
-            // Trigger "Are you satisfied now?" message
-        } else if (level === 'COMMISSIONER') {
-            newStatus = 'CLOSED_HIGHER_W_VC'; // Workflow Ends
-        }
-
-        await prisma.grievance.update({
-            where: { id: grievance.id },
-            data: { satisfactionStatus: newStatus }
-        });
-
-        res.json({ success: true, message: 'VC Marked as Done', status: newStatus });
-
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Error completing VC' });
     }
 };
 

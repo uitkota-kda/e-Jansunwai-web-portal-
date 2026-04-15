@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { X, User, Phone, MapPin, FileText, Calendar, Clock, Download, Video, Activity } from 'lucide-react';
+import { X, User, Phone, MapPin, FileText, Calendar, Clock, Download, Video, Activity, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { SERVER_URL } from '../../config';
 
@@ -21,7 +21,7 @@ const GrievanceDetailsModal = ({ grievance, onClose }) => {
 
     const handlePrint = () => {
         const printWindow = window.open('', '', 'width=800,height=600');
-        const logsHtml = (grievance.logs || []).map(log => `
+        const actionlogHtml = (grievance.logs || []).map(log => `
             <div class="timeline-item">
                 <div class="timeline-meta">
                     <span class="timeline-action">${log.action}</span>
@@ -100,8 +100,16 @@ const GrievanceDetailsModal = ({ grievance, onClose }) => {
                             <div class="value">${new Date(grievance.createdAt).toLocaleString()}</div>
                         </div>
                         <div class="field">
+                            <div class="label">Subject</div>
+                            <div class="value">${grievance.subject || 'N/A'}</div>
+                        </div>
+                        <div class="field">
                             <div class="label">Location / Area</div>
                             <div class="value">${grievance.address}</div>
+                        </div>
+                        <div class="field">
+                            <div class="label">Ward Number</div>
+                            <div class="value">Ward ${grievance.wardNo || 'N/A'}</div>
                         </div>
                         <div class="field">
                             <div class="label">Grievance Source</div>
@@ -142,7 +150,7 @@ const GrievanceDetailsModal = ({ grievance, onClose }) => {
                                         <div class="value">${grievance.expectedDate}</div>
                                     </div>
                                 ` : ''}
-                                ${grievance.subStatus ? `
+                                ${grievance.subStatus && grievance.subStatus !== 'SUB_SUBMITTED' ? `
                                     <div class="field">
                                         <div class="label">Sub Status</div>
                                         <div class="value">${(grievance.subStatus === 'ASSIGNED_TO_EE' || grievance.subStatus === 'ASSIGNED_TO_SUB') ? `Assigned to ${grievance.assignedZone || 'Official'}` : grievance.subStatus.replace(/_/g, ' ')}</div>
@@ -154,7 +162,7 @@ const GrievanceDetailsModal = ({ grievance, onClose }) => {
 
                     <h4>Grievance Life Cycle & Action History</h4>
                     <div class="timeline">
-                        ${logsHtml || '<div class="value">No action history recorded yet.</div>'}
+                        ${actionlogHtml || '<div class="value">No action history recorded yet.</div>'}
                     </div>
 
                     <div style="margin-top: 50px; text-align: center; font-size: 10px; color: #aaa; border-top: 1px solid #eee; padding-top: 20px;">
@@ -256,11 +264,27 @@ const GrievanceDetailsModal = ({ grievance, onClose }) => {
                                         <p className="text-xs text-gray-500 mt-1">Area / Colony</p>
                                     </div>
                                 </div>
+                                {grievance.wardNo && (
+                                    <div className="flex items-start mt-3 pt-3 border-t border-gray-200/50">
+                                        <LayoutDashboard className="w-5 h-5 text-gray-400 mr-3 mt-0.5" />
+                                        <div>
+                                            <p className="font-semibold text-gray-900 leading-snug">Ward {grievance.wardNo}</p>
+                                            <p className="text-xs text-gray-500 mt-1">Ward Number</p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
-                        {/* Complaint Details */}
+                        {/* Subject & Description */}
                         <div>
+                            <h4 className="text-sm font-bold text-gray-900 mb-2 flex items-center">
+                                <FileText className="w-4 h-4 mr-2 text-kota-500" /> Subject
+                            </h4>
+                            <div className="bg-white border border-gray-200 rounded-lg p-3 text-gray-800 font-bold mb-4">
+                                {grievance.subject || 'N/A'}
+                            </div>
+
                             <h4 className="text-sm font-bold text-gray-900 mb-2 flex items-center">
                                 <FileText className="w-4 h-4 mr-2 text-kota-500" /> Description
                             </h4>
@@ -298,7 +322,7 @@ const GrievanceDetailsModal = ({ grievance, onClose }) => {
                                             <p className="text-sm font-bold text-gray-900">{grievance.expectedDate}</p>
                                         </div>
                                     )}
-                                    {grievance.subStatus && (
+                                    {grievance.subStatus && grievance.subStatus !== 'SUB_SUBMITTED' && (
                                         <div>
                                             <p className="text-xs text-blue-600 font-semibold uppercase">Sub Status</p>
                                             <p className="text-sm font-bold text-gray-900">
@@ -318,66 +342,6 @@ const GrievanceDetailsModal = ({ grievance, onClose }) => {
                             </div>
                         )}
 
-                        {/* Video Hearing Details (Regular) */}
-                        {grievance.hearingLink && grievance.status !== 'RESOLVED' && grievance.status !== 'REJECTED' && (
-                            <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
-                                <h4 className="text-sm font-bold text-orange-800 mb-3 flex items-center">
-                                    <Video className="w-4 h-4 mr-2" /> Scheduled Video Hearing
-                                </h4>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-xs text-orange-600 font-semibold uppercase">Date & Time</p>
-                                        <p className="text-sm font-bold text-gray-900">{grievance.hearingDate} at {grievance.hearingTime}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-xs text-orange-600 font-semibold uppercase mb-1">Platform</p>
-                                        <p className="text-xs font-bold text-gray-500">Jitsi Meet</p>
-                                    </div>
-                                </div>
-                                <div className="mt-3 pt-3 border-t border-orange-200">
-                                    <button
-                                        onClick={() => {
-                                            const meetingId = grievance.hearingLink.split('/').pop();
-                                            navigate(`/hearing/${meetingId}`);
-                                            onClose();
-                                        }}
-                                        className="flex items-center justify-center w-full py-2 bg-orange-600 text-white rounded-lg font-bold hover:bg-orange-700 transition"
-                                    >
-                                        Join Hearing Now
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Satisfaction VC Details */}
-                        {grievance.vcMeetingLink && !['VC_DONE_SO', 'VC_DONE_COMMISSIONER', 'SATISFIED_POST_VC_SO', 'NOT_SATISFIED_POST_VC_SO', 'CLOSED_HIGHER_W_VC'].includes(grievance.satisfactionStatus) && (
-                            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                                <h4 className="text-sm font-bold text-blue-800 mb-3 flex items-center">
-                                    <Video className="w-4 h-4 mr-2" /> Scheduled Satisfaction VC
-                                </h4>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <p className="text-xs text-blue-600 font-semibold uppercase">Date & Time</p>
-                                        <p className="text-sm font-bold text-gray-900">{new Date(grievance.vcScheduledDate).toLocaleString()}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-xs text-blue-600 font-semibold uppercase mb-1">Platform</p>
-                                        <p className="text-xs font-bold text-gray-500">Video Call</p>
-                                    </div>
-                                </div>
-                                <div className="mt-3 pt-3 border-t border-blue-200">
-                                    <button
-                                        onClick={() => {
-                                            window.open(grievance.vcMeetingLink, '_blank');
-                                            onClose();
-                                        }}
-                                        className="flex items-center justify-center w-full py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition"
-                                    >
-                                        Join Satisfaction VC Now
-                                    </button>
-                                </div>
-                            </div>
-                        )}
 
                         {/* Attachments */}
                         {grievance.attachmentPath && (
@@ -470,25 +434,6 @@ const GrievanceDetailsModal = ({ grievance, onClose }) => {
                             </div>
                         )}
 
-                        {/* Satisfaction Workflow Tracking & Simulation */}
-                        {grievance.satisfactionStatus && (
-                            <div className="pt-6 border-t border-gray-100">
-                                <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center">
-                                    <Activity className="w-4 h-4 mr-2 text-purple-500" /> Citizen Satisfaction Status
-                                </h4>
-                                <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <span className="text-xs font-bold uppercase tracking-widest text-purple-600">Current Status</span>
-                                        <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-tight
-                                            ${grievance.satisfactionStatus.includes('NOT_SATISFIED') ? 'bg-red-100 text-red-700' :
-                                                grievance.satisfactionStatus.includes('SATISFIED') ? 'bg-green-100 text-green-700' :
-                                                    'bg-amber-100 text-amber-700'}`}>
-                                            {grievance.satisfactionStatus.replace(/_/g, ' ')}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
                     </div>
 
                     {/* Footer Actions */}

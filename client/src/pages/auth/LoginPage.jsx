@@ -96,14 +96,17 @@ const roleConfig = {
     }
 };
 
-const LoginPage = () => {
+const LoginPage = ({ defaultRole }) => {
     const [searchParams] = useSearchParams();
     const roleParam = searchParams.get('role');
 
-    // Initialize state from URL if valid, otherwise default
+    // Initialize state from URL if valid, then defaultRole prop, then default to ADMIN
     const [activeRole, setActiveRole] = useState(() => {
         if (roleParam && roleConfig[roleParam]) {
             return roleParam;
+        }
+        if (defaultRole && roleConfig[defaultRole]) {
+            return defaultRole;
         }
         return 'ADMIN';
     });
@@ -126,8 +129,15 @@ const LoginPage = () => {
         if (roleParam && roleConfig[roleParam]) {
             setActiveRole(roleParam);
             setError('');
+        } else if (defaultRole && roleConfig[defaultRole]) {
+            setActiveRole(defaultRole);
+            setError('');
+        } else {
+            // Fallback to default (usually ADMIN) if no specific role is requested
+            setActiveRole('ADMIN');
+            setError('');
         }
-    }, [roleParam]);
+    }, [roleParam, defaultRole]);
 
     const currentConfig = roleConfig[activeRole];
     const Icon = currentConfig.icon;
@@ -145,11 +155,7 @@ const LoginPage = () => {
 
     return (
         <div className="min-h-[calc(100vh-74px)] bg-slate-50 flex flex-col items-center justify-center p-6 relative overflow-hidden">
-            {/* Background Decorative Elements */}
-            <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden opacity-20">
-                <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-kota-200 blur-[120px]"></div>
-                <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-kota-300 blur-[120px]"></div>
-            </div>
+
 
             <div className="max-w-md w-full relative z-10 space-y-8">
                 {/* Header Information */}
@@ -167,8 +173,8 @@ const LoginPage = () => {
                             <div className="w-20 h-20 bg-white/10 rounded-[2rem] flex items-center justify-center mx-auto mb-6 backdrop-blur-md shadow-2xl border border-white/20 rotate-3 transition-transform">
                                 <Icon className="w-10 h-10 text-white" />
                             </div>
-                            <h2 className="text-2xl font-black tracking-tight">{currentConfig.title}</h2>
-                            <p className="text-white/80 text-sm mt-2 font-medium">{currentConfig.subtitle}</p>
+                            <h2 style={{ color: 'white' }} className="text-2xl font-black tracking-tight text-white">{currentConfig.title}</h2>
+                            <p style={{ color: 'white', opacity: 0.8 }} className="text-white/80 text-sm mt-2 font-medium">{currentConfig.subtitle}</p>
                         </div>
                     </div>
 
@@ -230,11 +236,7 @@ const LoginPage = () => {
                     </form>
                 </div>
 
-                <div className="flex justify-center space-x-6 text-slate-400 text-xs font-bold">
-                    <button className="hover:text-kota-600 transition-colors">Privacy Policy</button>
-                    <button className="hover:text-kota-600 transition-colors">Digital Security</button>
-                    <button className="hover:text-kota-600 transition-colors">KDA Website</button>
-                </div>
+
             </div>
         </div>
     );

@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const { randomUUID } = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = new PrismaClient();
@@ -14,6 +15,7 @@ exports.getAllUsers = async (req, res) => {
                 username: true,
                 role: true,
                 section: true,
+                zone: true,
                 email: true,
                 createdAt: true
             }
@@ -48,7 +50,7 @@ exports.getUsersByRole = async (req, res) => {
 // Create User
 exports.createUser = async (req, res) => {
     try {
-        const { name, username, password, role, section, email } = req.body;
+        const { name, username, password, role, section, zone, email } = req.body;
 
         // Basic validation
         if (!name || !username || !password || !role) {
@@ -60,11 +62,13 @@ exports.createUser = async (req, res) => {
 
         const newUser = await prisma.user.create({
             data: {
+                id: randomUUID(),
                 name,
                 username,
                 password: hashedPassword,
                 role,
                 section,
+                zone,
                 email
             }
         });
@@ -89,13 +93,14 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, username, password, role, section, email } = req.body;
+        const { name, username, password, role, section, zone, email } = req.body;
 
         const updateData = {
             name,
             username,
             role,
             section,
+            zone,
             email
         };
 

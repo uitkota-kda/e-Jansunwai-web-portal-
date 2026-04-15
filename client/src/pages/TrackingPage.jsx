@@ -1,7 +1,7 @@
 import { API_BASE_URL } from '../config';
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, AlertTriangle, ArrowRight, Video, Calendar } from 'lucide-react';
+import { Search, AlertTriangle, ArrowRight, Calendar, CheckCircle, XCircle, ShieldAlert, Info } from 'lucide-react';
 
 const TrackingPage = () => {
     const [searchParams] = useSearchParams();
@@ -57,6 +57,19 @@ const TrackingPage = () => {
         setGrievanceList(null);
     };
 
+    const handleFeedback = async (feedback) => {
+        const res = await fetch(`${API_BASE_URL}/grievances/${statusData.id}/feedback`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ feedback: feedback === 'SATISFIED' ? 'YES' : 'NO' })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(feedback === 'SATISFIED' ? 'Thank you for your positive feedback!' : 'Feedback recorded.');
+            performSearch(statusData.grievanceId);
+        }
+    };
+
     const formatDate = (dateString, options = {}) => {
         if (!dateString) return 'Pending...';
         const date = new Date(dateString);
@@ -78,7 +91,11 @@ const TrackingPage = () => {
                         <input
                             type="text"
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                if (/^\d+$/.test(val) && val.length > 10) return;
+                                setSearchQuery(val);
+                            }}
                             placeholder="Enter ID (KDA-2026-0001) or Mobile Number"
                             className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-kota-500 outline-none text-lg transition-all"
                             required
@@ -100,7 +117,6 @@ const TrackingPage = () => {
                     </div>
                 )}
 
-                {/* List View for Mobile Number Search */}
                 {grievanceList && (
                     <div className="mt-8 border-t border-gray-100 pt-8 animate-fade-in-up">
                         <h3 className="text-xl font-bold text-gray-900 mb-4">Found {grievanceList.length} Grievances</h3>
@@ -130,7 +146,6 @@ const TrackingPage = () => {
                     </div>
                 )}
 
-                {/* Detail View */}
                 {statusData && (
                     <div className="mt-8 border-t border-gray-100 pt-8 animate-fade-in-up">
                         {grievanceList === null && searchQuery.match(/^\d{10}$/) && (
@@ -194,89 +209,25 @@ const TrackingPage = () => {
                                         </p>
                                     </div>
                                 ))}
-
-                                {statusData.status !== 'RESOLVED' && statusData.status !== 'REJECTED' && (
-                                    <div className="relative opacity-60">
-                                        <div className="absolute -left-[41px] bg-gray-200 h-6 w-6 rounded-full border-4 border-white"></div>
-                                        <p className="font-bold text-gray-500">Under Process</p>
-                                        <p className="text-sm text-gray-400">Officer Verification Pending</p>
-                                    </div>
-                                )}
                             </div>
                         </div>
 
-                        {/* Video Conference Join Block (Consolidated) */}
-                        {(statusData.hearingLink || statusData.vcMeetingLink) && !['SATISFIED', 'SATISFIED_POST_VC_SO', 'CLOSED_HIGHER_W_VC'].includes(statusData.satisfactionStatus) && (
-                            <div className="mt-8 p-6 bg-indigo-50 border-2 border-indigo-200 rounded-2xl shadow-lg animate-pulse">
-                                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                                    <div className="flex items-center space-x-5">
-                                        <div className="bg-indigo-600 p-4 rounded-2xl text-white shadow-md">
-                                            <Video className="w-8 h-8" />
-                                        </div>
-                                        <div>
-                                            <h4 className="text-xl font-bold text-indigo-900">Active Video Session</h4>
-                                            <p className="text-indigo-700 font-medium">
-                                                {statusData.vcScheduledDate ? new Date(statusData.vcScheduledDate).toLocaleString() :
-                                                    (statusData.hearingDate ? `${statusData.hearingDate} ${statusData.hearingTime || ''}` : 'Scheduled Session')}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => {
-                                            const link = statusData.vcMeetingLink || statusData.hearingLink;
-                                            if (link.includes('/hearing/')) {
-                                                const meetingId = link.split('/').pop();
-                                                window.open(`/hearing/${meetingId}`, '_blank');
-                                            } else {
-                                                window.open(link, '_blank');
-                                            }
-                                        }}
-                                        className="w-full md:w-auto px-10 py-4 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 transition-all shadow-[0_10px_20px_rgba(79,70,229,0.3)] hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
-                                    >
-                                        <Video className="w-5 h-5" /> JOIN MEETING NOW
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
                         {/* Feedback / Satisfaction Block */}
-                        {(statusData.status === 'RESOLVED' || statusData.status === 'UNSATISFIED') && (
+                        {(statusData.status === 'RESOLVED') && (
                             <div className="mt-8 p-6 bg-white border-2 border-slate-100 rounded-3xl shadow-sm animate-fade-in-up">
-                                {!statusData.citizenFeedback || statusData.satisfactionStatus === 'VC_DONE_SO' ? (
+                                {!statusData.citizenFeedback ? (
                                     <>
                                         <h4 className="text-xl font-black text-slate-900 text-center mb-2">Resolution Feedback</h4>
                                         <p className="text-slate-500 text-center mb-6 text-sm">Are you satisfied with the work done on your grievance?</p>
                                         <div className="flex flex-col sm:flex-row justify-center gap-4">
                                             <button
-                                                onClick={async () => {
-                                                    const res = await fetch(`${API_BASE_URL}/grievances/${statusData.id}/feedback`, {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({ feedback: 'YES' })
-                                                    });
-                                                    const data = await res.json();
-                                                    if (data.success) {
-                                                        alert('Thank you for your positive feedback!');
-                                                        performSearch(statusData.grievanceId);
-                                                    }
-                                                }}
+                                                onClick={() => handleFeedback('SATISFIED')}
                                                 className="flex-1 px-8 py-4 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-100 flex items-center justify-center gap-2"
                                             >
                                                 <CheckCircle className="w-5 h-5" /> Yes, I'm Satisfied
                                             </button>
                                             <button
-                                                onClick={async () => {
-                                                    const res = await fetch(`${API_BASE_URL}/grievances/${statusData.id}/feedback`, {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({ feedback: 'NO' })
-                                                    });
-                                                    const data = await res.json();
-                                                    if (data.success) {
-                                                        alert('Feedback recorded. Our officers will schedule a Video Conference to discuss this further.');
-                                                        performSearch(statusData.grievanceId);
-                                                    }
-                                                }}
+                                                onClick={() => handleFeedback('NOT_SATISFIED')}
                                                 className="flex-1 px-8 py-4 bg-rose-600 text-white font-bold rounded-2xl hover:bg-rose-700 transition shadow-lg shadow-rose-100 flex items-center justify-center gap-2"
                                             >
                                                 <XCircle className="w-5 h-5" /> No, Not Satisfied
@@ -289,10 +240,20 @@ const TrackingPage = () => {
                                             {statusData.citizenFeedback === 'YES' ? <CheckCircle className="w-4 h-4 mr-2" /> : <ShieldAlert className="w-4 h-4 mr-2" />}
                                             Feedback Preference: {statusData.citizenFeedback === 'YES' ? 'Satisfied' : 'Dissatisfied'}
                                         </div>
-                                        {statusData.satisfactionStatus === 'NOT_SATISFIED' && (
-                                            <p className="mt-4 text-slate-500 text-sm italic">
-                                                Please wait for our officers to schedule a Video Conference for further review.
-                                            </p>
+                                        {statusData.citizenFeedback === 'NO' && (
+                                            <div className="mt-6 p-6 bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl border border-orange-100 text-center">
+                                                <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+                                                    <Info className="w-6 h-6 text-orange-600" />
+                                                </div>
+                                                <h5 className="text-lg font-black text-gray-900 mb-2">Visit KDA Office for Further Assistance</h5>
+                                                <p className="text-sm text-gray-600 leading-relaxed">
+                                                    We understand you are not satisfied with the resolution. Since we follow a <b>Physical Jansunwai</b> model, we request you to please visit the KDA office in person for a detailed discussion and further resolution of your grievance.
+                                                </p>
+                                                <div className="mt-4 inline-block bg-white/60 px-4 py-2 rounded-xl border border-orange-100">
+                                                    <p className="text-[10px] font-bold text-orange-800 uppercase tracking-widest">Office Hours</p>
+                                                    <p className="text-xs font-bold text-gray-900">10:00 AM - 5:00 PM (Working Days)</p>
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
                                 )}

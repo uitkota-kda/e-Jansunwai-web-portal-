@@ -40,8 +40,6 @@ router.put('/:id', verifyToken, upload.single('attachment'), grievanceController
 // router.delete('/', verifyToken, grievanceController.deleteAllGrievances);
 router.get('/', verifyToken, grievanceController.listGrievances); // Dashboard list - Protected
 router.post('/:id/feedback', grievanceController.submitFeedback); // User feedback - Public?
-router.post('/:id/schedule-vc', verifyToken, grievanceController.scheduleSatisfactionVC);
-router.post('/:id/complete-vc', verifyToken, grievanceController.completeSatisfactionVC);
 
 
 module.exports = router;

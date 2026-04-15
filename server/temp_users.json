@@ -1,0 +1,86 @@
+[
+  {
+    "username": "aao_revenue",
+    "role": "REVENUE_OFFICIAL",
+    "section": "Revenue",
+    "zone": "AAO- Kota South"
+  },
+  {
+    "username": "tdr_zone1",
+    "role": "REVENUE_OFFICIAL",
+    "section": "Revenue",
+    "zone": "TDR Zone 1"
+  },
+  {
+    "username": "ee_housing",
+    "role": "EXECUTIVE_ENGINEER",
+    "section": null,
+    "zone": "Housing"
+  },
+  {
+    "username": "operator",
+    "role": "OPERATOR",
+    "section": null,
+    "zone": null
+  },
+  {
+    "username": "ee_crf",
+    "role": "EXECUTIVE_ENGINEER",
+    "section": null,
+    "zone": "CRF"
+  },
+  {
+    "username": "admin",
+    "role": "MODERATOR",
+    "section": null,
+    "zone": null
+  },
+  {
+    "username": "legal",
+    "role": "SECTION_OFFICER",
+    "section": "Director legal",
+    "zone": null
+  },
+  {
+    "username": "plan",
+    "role": "SECTION_OFFICER",
+    "section": "Director Planning",
+    "zone": null
+  },
+  {
+    "username": "fin",
+    "role": "SECTION_OFFICER",
+    "section": "Director Finance",
+    "zone": null
+  },
+  {
+    "username": "dc1",
+    "role": "SECTION_OFFICER",
+    "section": "Deputy commissioner I",
+    "zone": null
+  },
+  {
+    "username": "superadmin",
+    "role": "SUPER_ADMIN",
+    "section": null,
+    "zone": null
+  },
+  {
+    "username": "commissioner",
+    "role": "COMMISSIONER",
+    "section": null,
+    "zone": null
+  },
+  {
+    "username": "eng",
+    "role": "SECTION_OFFICER",
+    "section": "Director Engineering",
+    "zone": null
+  },
+  {
+    "username": "dc2",
+    "role": "SECTION_OFFICER",
+    "section": "Deputy commissioner II",
+    "zone": null
+  }
+]

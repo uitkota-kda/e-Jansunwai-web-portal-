@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '../../config';
 import React, { useState, useEffect } from 'react';
-import { FileText, CheckCircle, Clock, AlertTriangle, Video, Paperclip, Trash2, XCircle, Activity, AlertCircle, ChevronLeft, ChevronRight, ChevronsRight, Search, Settings, Printer, CornerDownLeft, Flag, ShieldAlert } from 'lucide-react';
+import { FileText, CheckCircle, Clock, AlertTriangle, Paperclip, Trash2, XCircle, Activity, AlertCircle, ChevronLeft, ChevronRight, ChevronsRight, Search, Settings, Printer, CornerDownLeft, Flag, ShieldAlert } from 'lucide-react';
 import GrievanceDetailsModal from '../../components/dashboard/GrievanceDetailsModal';
 import ManageGrievanceModal from '../../components/dashboard/ManageGrievanceModal';
 import DailyReportModal from '../../components/dashboard/DailyReportModal';
@@ -124,6 +124,8 @@ const ModeratorDashboard = () => {
                     console.log(`UPDATE: Your grievance ${grievance.grievanceId} has been accepted and assigned to ${updates.assignedSection}.`);
                 }
                 alert('Grievance updated successfully!');
+            } else {
+                alert(data.message || 'Failed to update grievance');
             }
         } catch (err) {
             console.error(err);
@@ -353,7 +355,6 @@ const ModeratorDashboard = () => {
                                                                 <CornerDownLeft className="w-3 h-3 mr-0.5" /> {grievance.isReopened ? 'COMMISSIONER RETURNED' : 'RETURNED'}
                                                             </span>
                                                         )}
-                                                        {grievance.hearingLink && <Video className="w-3.5 h-3.5 text-orange-500" />}
                                                         {grievance.attachmentPath && <Paperclip className="w-3.5 h-3.5 text-blue-500" />}
                                                     </div>
                                                 </div>

@@ -3,11 +3,10 @@ import React, { useState, useEffect } from 'react';
 import {
     FileText, CheckCircle, Clock, Trash2, ChevronLeft, ChevronRight,
     AlertTriangle, Send, Calendar, Printer, Filter, MoreVertical,
-    MessageSquare, Video, ShieldAlert, MapPin, Settings, XCircle, Activity, Search, CornerDownLeft
+    MessageSquare, ShieldAlert, MapPin, Settings, XCircle, Activity, Search, CornerDownLeft
 } from 'lucide-react';
 import ManageGrievanceModal from '../../components/dashboard/ManageGrievanceModal';
 import GrievanceDetailsModal from '../../components/dashboard/GrievanceDetailsModal';
-import ScheduleVCModal from '../../components/dashboard/ScheduleVCModal';
 import DailyReportModal from '../../components/dashboard/DailyReportModal';
 import AssignZoneModal from '../../components/dashboard/AssignZoneModal';
 import { useAuth } from '../../context/AuthContext';
@@ -49,7 +48,6 @@ const OfficerDashboard = () => {
     const { user } = useAuth();
 
     // Dynamic Sub-Official Title based on Section
-    // Dynamic Sub-Official Title based on Section
     const subOfficialTitle = user?.section === 'Director Engineering' ? 'Executive Engineer' :
         user?.section?.includes('commissioner') ? 'Tehsildar' :
             user?.section?.includes('Planning') ? 'Planner' :
@@ -64,9 +62,7 @@ const OfficerDashboard = () => {
     const [grievances, setGrievances] = useState([]);
     const [selectedManageGrievance, setSelectedManageGrievance] = useState(null);
     const [selectedDetailsGrievance, setSelectedDetailsGrievance] = useState(null);
-    const [showVCModal, setShowVCModal] = useState(false);
     const [showDailyReportModal, setShowDailyReportModal] = useState(false);
-    const [vcGrievance, setVcGrievance] = useState(null);
     const [activeTab, setActiveTab] = useState('ALL');
     const [filterPriority, setFilterPriority] = useState('ALL');
     const [sourceFilter, setSourceFilter] = useState('ALL');
@@ -87,8 +83,6 @@ const OfficerDashboard = () => {
             const data = await response.json();
 
             if (data.success) {
-                // Determine if we need to filter by section (if backend returns all)
-                // For now, assuming backend handles major filtering or we show all returned
                 setGrievances(data.data);
             }
         } catch (err) {
@@ -128,13 +122,6 @@ const OfficerDashboard = () => {
             });
             const data = await response.json();
             if (data.success) {
-                if (updates.status === 'RESOLVED') {
-                    const grievance = grievances.find(g => g.id === id);
-                    if (grievance) {
-                        const actionReport = updates.remarks || updates.description || 'Grievance has been resolved.';
-                        // sendMockWhatsApp(`RESOLVED_PROMPT:::${grievance.id}:::${grievance.grievanceId}:::${actionReport}`); // Removed
-                    }
-                }
                 alert('Status Updated Successfully');
                 fetchData();
                 setSelectedManageGrievance(null);
@@ -145,11 +132,6 @@ const OfficerDashboard = () => {
             console.error('Update error:', error);
             alert('Update failed');
         }
-    };
-
-    const handleScheduleVC = (g) => {
-        setVcGrievance(g);
-        setShowVCModal(true);
     };
 
     // Helper to get token
@@ -200,20 +182,12 @@ const OfficerDashboard = () => {
 
     const checkIsCritical = (g) => {
         const daysOld = (new Date() - new Date(g.createdAt)) / (1000 * 60 * 60 * 24);
-
-        // 1. Pending & Unassigned for > 7 days
         const isUnassignedOverdue = g.status === 'PENDING' && !g.assignedSection && daysOld > 7;
-
-        // 2. Assigned but no response/date for > 7 days
         const isNoResponseOverdue = g.assignedSection && (g.status === 'PENDING' || g.status === 'ACCEPTED') && !g.expectedDate && daysOld > 7;
-
-        // 3. Crossed expected date of disposal
         const isPastExpectedDate = g.expectedDate && new Date(g.expectedDate) < new Date().setHours(0, 0, 0, 0);
-
         return isUnassignedOverdue || isNoResponseOverdue || isPastExpectedDate;
     };
 
-    // Helper function to check if grievance was returned by Sub-Official
     const isReturnedBySub = (g) => {
         return g.eeStatus === 'RETURNED';
     };
@@ -223,8 +197,6 @@ const OfficerDashboard = () => {
         let matchesTab = true;
         if (activeTab === 'PENDING') {
             matchesTab = g.status === 'PENDING' || g.status === 'ACCEPTED' || g.status === 'REOPENED';
-
-            // For Directors, also include In-Progress items that need their action
             if (user?.isDirector) {
                 matchesTab = matchesTab || (
                     g.status === 'IN_PROGRESS' &&
@@ -234,31 +206,22 @@ const OfficerDashboard = () => {
         }
         else if (activeTab === 'IN_PROGRESS') {
             matchesTab = g.status === 'IN_PROGRESS';
-
-            // Director Engineering specific filter for IN_PROGRESS tab
             if (user?.isDirector && directorFilter !== 'ALL') {
                 if (directorFilter === 'ACTION_PENDING') {
-                    // Show cases where:
-                    // 1. Director accepted but not assigned to any zone
-                    // 2. EE has returned the case
-                    // 3. EE has replied and waiting for director's action
                     matchesTab = matchesTab && (
                         (!g.assignedZone) ||
                         (g.eeStatus === 'RETURNED') ||
                         (g.eeStatus === 'REPLIED')
                     );
                 } else if (directorFilter === 'ASSIGNED_TO_EE') {
-                    // Show only cases assigned to EE and pending their action
                     matchesTab = matchesTab && g.assignedZone && !g.eeStatus;
                 }
             }
         }
         else if (activeTab === 'ESCALATED') matchesTab = checkIsCritical(g);
         else if (activeTab === 'RESOLVED') matchesTab = g.status === 'RESOLVED';
-        else if (activeTab === 'ESCALATED') matchesTab = checkIsCritical(g);
-        else if (activeTab === 'RESOLVED') matchesTab = g.status === 'RESOLVED';
         else if (activeTab === 'REJECTED') matchesTab = g.status === 'REJECTED';
-        else if (activeTab === 'UNSATISFIED') matchesTab = g.status === 'UNSATISFIED' || ['NOT_SATISFIED', 'VC_SCHEDULED_SO', 'VC_DONE_SO', 'NOT_SATISFIED_POST_VC_SO'].includes(g.satisfactionStatus);
+        else if (activeTab === 'UNSATISFIED') matchesTab = g.status === 'UNSATISFIED' || ['NOT_SATISFIED', 'NOT_SATISFIED_POST_VC_SO'].includes(g.satisfactionStatus);
 
         const matchesSource = sourceFilter === 'ALL' || g.source === sourceFilter;
         const lowerSearch = searchTerm.toLowerCase();
@@ -267,8 +230,6 @@ const OfficerDashboard = () => {
             (g.mobile?.toLowerCase().includes(lowerSearch)) ||
             (g.name?.toLowerCase().includes(lowerSearch));
 
-        // Section/Department Filter
-        // If user has a zone, they should also see what is assigned to that zone
         const userSection = (user?.section || '').trim().toLowerCase();
         const userZone = (user?.zone || '').trim().toLowerCase();
         const grievanceSection = (g.assignedSection || '').trim().toLowerCase();
@@ -276,17 +237,11 @@ const OfficerDashboard = () => {
 
         let matchesSection = true;
         if (userZone) {
-            // User has a specific zone (like TDR Zone 1) - show if either section or zone matches
             matchesSection = (grievanceZone === userZone) || (userSection && grievanceSection === userSection);
         } else if (userSection) {
-            // User only has a section - must match section
             matchesSection = (grievanceSection === userSection);
         }
 
-        // VISIBILITY RULE:
-        // Fresh grievances (PENDING & Unassigned) should ONLY be visible to Moderator.
-        // If we are in OfficerDashboard, we are likely a Section Officer/Director.
-        // So we must HIDE fresh unassigned grievances.
         const isFreshUnassigned = g.status === 'PENDING' && !g.assignedSection;
         if (isFreshUnassigned) return false;
 
@@ -300,7 +255,6 @@ const OfficerDashboard = () => {
 
     return (
         <div className="space-y-8 animate-fade-in-up">
-            {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Officer Workstation</h1>
@@ -316,7 +270,6 @@ const OfficerDashboard = () => {
                 </div>
             </div>
 
-            {/* Stats Overview - Now Filter Buttons */}
             <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4">
                 <StatCard
                     title="Total Tasks"
@@ -363,7 +316,7 @@ const OfficerDashboard = () => {
                 />
                 <StatCard
                     title="Unsatisfied"
-                    value={grievances.filter(g => g.status === 'UNSATISFIED' || ['NOT_SATISFIED', 'VC_SCHEDULED_SO', 'VC_DONE_SO', 'NOT_SATISFIED_POST_VC_SO'].includes(g.satisfactionStatus)).length}
+                    value={grievances.filter(g => g.status === 'UNSATISFIED' || ['NOT_SATISFIED', 'NOT_SATISFIED_POST_VC_SO'].includes(g.satisfactionStatus)).length}
                     subtext="Citizen Feedback"
                     icon={ShieldAlert}
                     color="bg-rose-600"
@@ -404,17 +357,13 @@ const OfficerDashboard = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                {/* Main Task Area - Full Width */}
                 <div className="lg:col-span-3 space-y-6">
-                    {/* Controls & Label */}
                     <div className="bg-white p-2 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center px-4">
                         <div className="flex items-center space-x-3">
                             <h3 className="font-bold text-gray-900 mr-2">Task List</h3>
                             <span className="px-3 py-1 bg-white border border-gray-200 rounded-full text-xs font-bold text-gray-500 uppercase tracking-wider shadow-sm">
                                 Viewing: {activeTab === 'ALL' ? 'All Tasks' : activeTab === 'ESCALATED' ? 'Critical' : activeTab}
                             </span>
-                            {/* Director Engineering Filter for IN_PROGRESS tab */}
                             {user?.isDirector && activeTab === 'IN_PROGRESS' && (
                                 <span className="px-3 py-1 bg-purple-50 border border-purple-200 rounded-full text-xs font-bold text-purple-700 uppercase tracking-wider shadow-sm">
                                     {directorFilter === 'ACTION_PENDING' ? '⚡ Action Pending' : directorFilter === 'ASSIGNED_TO_EE' ? `📍 With ${subOfficialShort}` : 'All Cases'}
@@ -422,7 +371,6 @@ const OfficerDashboard = () => {
                             )}
                         </div>
 
-                        {/* Search & Source Filter */}
                         <div className="relative flex-1 max-w-lg mx-4 flex items-center space-x-2">
                             <div className="relative flex-1">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -450,7 +398,6 @@ const OfficerDashboard = () => {
                                 <option value="DIVISIONAL_COMMISSIONER">Divisional Commissioner</option>
                                 <option value="MISCELLANEOUS">Miscellaneous</option>
                             </select>
-                            {/* Director Engineering specific filter dropdown */}
                             {user?.isDirector && activeTab === 'IN_PROGRESS' && (
                                 <select
                                     value={directorFilter}
@@ -484,7 +431,6 @@ const OfficerDashboard = () => {
                         </div>
                     </div>
 
-                    {/* Task List */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden min-h-[400px]">
                         {priorityGrievances.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-64 text-gray-400">
@@ -522,7 +468,6 @@ const OfficerDashboard = () => {
                                                         {g.status}
                                                     </span>
 
-                                                    {/* Satisfaction Flags */}
                                                     {g.satisfactionStatus === 'SATISFIED' && (
                                                         <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold border border-green-200 flex items-center">
                                                             <CheckCircle className="w-3 h-3 mr-1" /> Satisfied
@@ -533,28 +478,14 @@ const OfficerDashboard = () => {
                                                             <ShieldAlert className="w-3 h-3 mr-1" /> Dissatisfied
                                                         </span>
                                                     )}
-                                                    {g.satisfactionStatus === 'VC_SCHEDULED_SO' && (
-                                                        <span className="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded font-bold border border-yellow-200 flex items-center">
-                                                            <Video className="w-3 h-3 mr-1" /> VC Scheduled
-                                                        </span>
-                                                    )}
-                                                    {g.satisfactionStatus === 'VC_DONE_SO' && (
-                                                        <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold border border-blue-200 flex items-center">
-                                                            <Video className="w-3 h-3 mr-1" /> VC Done
-                                                        </span>
-                                                    )}
                                                     {g.satisfactionStatus === 'SATISFIED_POST_VC_SO' && (
                                                         <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold border border-green-200 flex items-center">
                                                             <CheckCircle className="w-3 h-3 mr-1" /> Satisfied (Post VC)
                                                         </span>
                                                     )}
-                                                    {g.satisfactionStatus === 'NOT_SATISFIED_POST_VC_SO' && (
-                                                        <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold border border-orange-200 flex items-center">
-                                                            <MapPin className="w-3 h-3 mr-1" /> Visit Office
-                                                        </span>
-                                                    )}
 
-                                                    {g.subStatus && (
+
+                                                    {g.subStatus && g.subStatus !== 'SUB_SUBMITTED' && (
                                                         <span className="mt-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 uppercase">
                                                             {(g.subStatus === 'ASSIGNED_TO_EE' || g.subStatus === 'ASSIGNED_TO_SUB')
                                                                 ? `Assigned to ${subOfficialShort} ${g.assignedZone || ''}`
@@ -602,31 +533,8 @@ const OfficerDashboard = () => {
                                                             )}
                                                         </div>
                                                     )}
-                                                    {g.hearingLink && g.status !== 'RESOLVED' && g.status !== 'REJECTED' && (
-                                                        <div className="flex items-center space-x-2 mt-1">
-                                                            <span className="text-[10px] bg-orange-50 text-orange-700 px-2 py-0.5 rounded font-bold border border-orange-200 flex items-center">
-                                                                <Video className="w-3 h-3 mr-1" /> Hearing: {g.hearingDate} {g.hearingTime}
-                                                            </span>
-                                                            <a href={g.hearingLink} target="_blank" rel="noopener noreferrer" className="text-[10px] text-orange-600 underline hover:text-orange-800">
-                                                                Join Link
-                                                            </a>
-                                                        </div>
-                                                    )}
-                                                    {g.vcScheduledDate && !['VC_DONE_SO', 'SATISFIED_POST_VC_SO', 'NOT_SATISFIED_POST_VC_SO', 'CLOSED_HIGHER_W_VC'].includes(g.satisfactionStatus) && (
-                                                        <div className="flex items-center space-x-2 mt-1">
-                                                            <span className="text-[10px] bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded font-bold border border-yellow-200 flex items-center">
-                                                                <Video className="w-3 h-3 mr-1" /> VC: {new Date(g.vcScheduledDate).toLocaleString()}
-                                                            </span>
-                                                            {g.vcMeetingLink && (
-                                                                <a href={g.vcMeetingLink} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-600 underline hover:text-blue-800">
-                                                                    Join Link
-                                                                </a>
-                                                            )}
-                                                        </div>
-                                                    )}
                                                 </div>
 
-                                                {/* Action Buttons */}
                                                 <div className="flex flex-wrap gap-2 justify-end opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity max-w-[200px]">
                                                     <button
                                                         onClick={() => setSelectedDetailsGrievance(g)}
@@ -643,7 +551,6 @@ const OfficerDashboard = () => {
                                                                 <Settings className="w-3 h-3 mr-2" /> Manage
                                                             </button>
 
-                                                            {/* Director Engineering Assignment Button */}
                                                             {user?.isDirector && (
                                                                 <button
                                                                     onClick={() => setSelectedAssignGrievance(g)}
@@ -657,7 +564,6 @@ const OfficerDashboard = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Show EE Response to Director */}
                                             {user?.isDirector && g.eeRemarks && (
                                                 <div className="mt-3 bg-gray-50 p-3 rounded-lg border border-gray-200 text-sm">
                                                     <p className="font-bold text-gray-700 text-xs uppercase mb-1">
@@ -671,59 +577,21 @@ const OfficerDashboard = () => {
                                             )}
 
                                             <div className="mt-3 flex justify-end">
-                                                {(g.status === 'RESOLVED' || g.status === 'UNSATISFIED') ? (
-                                                    <div className="flex gap-2">
-                                                        {g.satisfactionStatus === 'NOT_SATISFIED' && (
-                                                            <button
-                                                                onClick={() => handleScheduleVC(g)}
-                                                                className="flex items-center px-3 py-1.5 bg-orange-50 text-orange-700 text-xs font-bold rounded-lg hover:bg-orange-100 transition-colors"
-                                                            >
-                                                                <Video className="w-3 h-3 mr-2" /> Schedule Hearing
-                                                            </button>
-                                                        )}
-
-                                                        {g.satisfactionStatus === 'VC_SCHEDULED_SO' && (
-                                                            <button
-                                                                onClick={async () => {
-                                                                    if (window.confirm("Mark VC as done? This will trigger a satisfaction check for the citizen.")) {
-                                                                        const res = await fetch(`${API_BASE_URL}/grievances/${g.id}/complete-vc`, {
-                                                                            method: 'POST',
-                                                                            headers: { 'Content-Type': 'application/json' },
-                                                                            body: JSON.stringify({ level: 'SO' })
-                                                                        });
-                                                                        const data = await res.json();
-                                                                        if (data.success) {
-                                                                            // sendMockWhatsApp(`VC_DONE_PROMPT:::${g.id}:::${g.grievanceId}`); // Removed
-                                                                            alert("VC marked as Done. Citizen has been asked for feedback.");
-                                                                            fetchData();
-                                                                        }
-                                                                    }
-                                                                }}
-                                                                className="flex items-center px-3 py-1.5 bg-green-50 text-green-700 text-xs font-bold rounded-lg hover:bg-green-100 transition-colors"
-                                                            >
-                                                                <CheckCircle className="w-3 h-3 mr-2" /> Mark VC Done
-                                                            </button>
-                                                        )}
-
-                                                        {['SATISFIED', 'SATISFIED_POST_VC_SO', 'NOT_SATISFIED_POST_VC_SO', 'CLOSED_HIGHER_W_VC'].includes(g.satisfactionStatus) && (
-                                                            <span className="text-xs text-gray-400 italic px-3 py-1.5">
-                                                                Case Closed
-                                                            </span>
-                                                        )}
-
-                                                        {(!g.satisfactionStatus || g.satisfactionStatus === 'PENDING_FEEDBACK') && (
-                                                            <span className="text-xs text-gray-400 italic px-3 py-1.5 flex items-center">
-                                                                <Clock className="w-3 h-3 mr-1" /> Waiting for Feedback
-                                                            </span>
-                                                        )}
-                                                    </div>
+                                                {['SATISFIED', 'SATISFIED_POST_VC_SO', 'NOT_SATISFIED_POST_VC_SO', 'CLOSED_HIGHER_W_VC'].includes(g.satisfactionStatus) ? (
+                                                    <span className="text-xs text-gray-400 italic px-3 py-1.5">
+                                                        Case Closed
+                                                    </span>
                                                 ) : (
-                                                    (g.status === 'REJECTED') ? (
-                                                        <span className="text-xs text-gray-400 italic px-3 py-1.5">
-                                                            Case Closed (Rejected)
+                                                    (g.status === 'RESOLVED' || g.status === 'UNSATISFIED') ? (
+                                                        <span className="text-xs text-gray-400 italic px-3 py-1.5 flex items-center">
+                                                            <Clock className="w-3 h-3 mr-1" /> Waiting for Feedback
                                                         </span>
                                                     ) : (
-                                                        null
+                                                        g.status === 'REJECTED' ? (
+                                                            <span className="text-xs text-gray-400 italic px-3 py-1.5">
+                                                                Case Closed (Rejected)
+                                                            </span>
+                                                        ) : null
                                                     )
                                                 )}
                                             </div>
@@ -734,130 +602,94 @@ const OfficerDashboard = () => {
                         )}
                     </div>
 
-                    {/* Pagination Controls - Specific Design Match */}
-                    {
-                        priorityGrievances.length > 10 && (
-                            <div className="flex flex-col justify-center items-center mt-6 gap-3">
-                                {/* Buttons Container */}
-                                <div className="flex items-center space-x-2">
-                                    {/* Back Button */}
-                                    <button
-                                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                        disabled={currentPage === 1}
-                                        className="flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm font-medium"
-                                    >
-                                        <ChevronLeft className="w-4 h-4 mr-1" /> Back
-                                    </button>
+                    {priorityGrievances.length > 10 && (
+                        <div className="flex flex-col justify-center items-center mt-6 gap-3">
+                            <div className="flex items-center space-x-2">
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                    className="flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm font-medium"
+                                >
+                                    <ChevronLeft className="w-4 h-4 mr-1" /> Back
+                                </button>
 
-                                    {/* Page Numbers */}
-                                    <div className="flex items-center space-x-1">
-                                        {(() => {
-                                            const totalPages = Math.ceil(priorityGrievances.length / 10);
-                                            const pages = [];
-
-                                            if (totalPages <= 5) {
-                                                for (let i = 1; i <= totalPages; i++) {
-                                                    pages.push(i);
-                                                }
-                                            } else {
-                                                if (currentPage <= 3) {
-                                                    pages.push(1, 2, 3, '...', totalPages);
-                                                } else if (currentPage >= totalPages - 2) {
-                                                    pages.push(1, '...', totalPages - 2, totalPages - 1, totalPages);
-                                                } else {
-                                                    pages.push(1, '...', currentPage, '...', totalPages);
-                                                }
-                                            }
-
-                                            return pages.map((page, index) => (
-                                                <button
-                                                    key={index}
-                                                    onClick={() => typeof page === 'number' ? setCurrentPage(page) : null}
-                                                    disabled={typeof page !== 'number'}
-                                                    className={`px-3 py-1.5 rounded-md font-medium text-sm transition-all border ${page === currentPage
-                                                        ? 'bg-kota-600 border-kota-600 text-white'
-                                                        : typeof page === 'number'
-                                                            ? 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                                                            : 'bg-transparent border-transparent text-gray-500 cursor-default'
-                                                        }`}
-                                                >
-                                                    {page}
-                                                </button>
-                                            ));
-                                        })()}
-                                    </div>
-
-                                    {/* Next Button */}
-                                    <button
-                                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(priorityGrievances.length / 10)))}
-                                        disabled={currentPage === Math.ceil(priorityGrievances.length / 10)}
-                                        className="flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm font-medium"
-                                    >
-                                        Next <ChevronRight className="w-4 h-4 ml-1" />
-                                    </button>
+                                <div className="flex items-center space-x-1">
+                                    {(() => {
+                                        const totalPages = Math.ceil(priorityGrievances.length / 10);
+                                        const pages = [];
+                                        if (totalPages <= 5) {
+                                            for (let i = 1; i <= totalPages; i++) pages.push(i);
+                                        } else {
+                                            if (currentPage <= 3) pages.push(1, 2, 3, '...', totalPages);
+                                            else if (currentPage >= totalPages - 2) pages.push(1, '...', totalPages - 2, totalPages - 1, totalPages);
+                                            else pages.push(1, '...', currentPage, '...', totalPages);
+                                        }
+                                        return pages.map((page, index) => (
+                                            <button
+                                                key={index}
+                                                onClick={() => typeof page === 'number' ? setCurrentPage(page) : null}
+                                                disabled={typeof page !== 'number'}
+                                                className={`px-3 py-1.5 rounded-md font-medium text-sm transition-all border ${page === currentPage
+                                                    ? 'bg-kota-600 border-kota-600 text-white'
+                                                    : typeof page === 'number'
+                                                        ? 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                                                        : 'bg-transparent border-transparent text-gray-500 cursor-default'
+                                                    }`}
+                                            >
+                                                {page}
+                                            </button>
+                                        ));
+                                    })()}
                                 </div>
 
-                                {/* Results Text */}
-                                <div className="text-sm text-gray-500 font-medium">
-                                    <span className="font-semibold text-gray-700">{((currentPage - 1) * 10) + 1}-{Math.min(currentPage * 10, priorityGrievances.length)}</span> of <span className="font-semibold text-gray-700">{priorityGrievances.length}</span> Results
-                                </div>
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(priorityGrievances.length / 10)))}
+                                    disabled={currentPage === Math.ceil(priorityGrievances.length / 10)}
+                                    className="flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm font-medium"
+                                >
+                                    Next <ChevronRight className="w-4 h-4 ml-1" />
+                                </button>
                             </div>
-                        )
-                    }
 
-                    {/* Modals */}
-                    {
-                        selectedDetailsGrievance && (
-                            <GrievanceDetailsModal
-                                grievance={selectedDetailsGrievance}
-                                onClose={() => setSelectedDetailsGrievance(null)}
-                            />
-                        )
-                    }
+                            <div className="text-sm text-gray-500 font-medium">
+                                <span className="font-semibold text-gray-700">{((currentPage - 1) * 10) + 1}-{Math.min(currentPage * 10, priorityGrievances.length)}</span> of <span className="font-semibold text-gray-700">{priorityGrievances.length}</span> Results
+                            </div>
+                        </div>
+                    )}
 
-                    {
-                        selectedManageGrievance && (
-                            <ManageGrievanceModal
-                                grievance={selectedManageGrievance}
-                                onClose={() => setSelectedManageGrievance(null)}
-                                onSave={handleStatusUpdate}
-                            />
-                        )
-                    }
+                    {selectedDetailsGrievance && (
+                        <GrievanceDetailsModal
+                            grievance={selectedDetailsGrievance}
+                            onClose={() => setSelectedDetailsGrievance(null)}
+                        />
+                    )}
 
-                    {
-                        showVCModal && vcGrievance && (
-                            <ScheduleVCModal
-                                isOpen={showVCModal}
-                                onClose={() => setShowVCModal(false)}
-                                grievance={vcGrievance}
-                                onSuccess={fetchData}
-                            />
-                        )
-                    }
+                    {selectedManageGrievance && (
+                        <ManageGrievanceModal
+                            grievance={selectedManageGrievance}
+                            onClose={() => setSelectedManageGrievance(null)}
+                            onSave={handleStatusUpdate}
+                        />
+                    )}
 
-                    {
-                        showDailyReportModal && (
-                            <DailyReportModal
-                                isOpen={showDailyReportModal}
-                                onClose={() => setShowDailyReportModal(false)}
-                                grievances={grievances}
-                            />
-                        )
-                    }
+                    {showDailyReportModal && (
+                        <DailyReportModal
+                            isOpen={showDailyReportModal}
+                            onClose={() => setShowDailyReportModal(false)}
+                            grievances={grievances}
+                        />
+                    )}
 
-                    {
-                        selectedAssignGrievance && (
-                            <AssignZoneModal
-                                grievance={selectedAssignGrievance}
-                                onClose={() => setSelectedAssignGrievance(null)}
-                                onAssign={handleAssignZone}
-                            />
-                        )
-                    }
-                </div >
-            </div >
-        </div >
+                    {selectedAssignGrievance && (
+                        <AssignZoneModal
+                            grievance={selectedAssignGrievance}
+                            onClose={() => setSelectedAssignGrievance(null)}
+                            onAssign={handleAssignZone}
+                        />
+                    )}
+                </div>
+            </div>
+        </div>
     );
 };
 

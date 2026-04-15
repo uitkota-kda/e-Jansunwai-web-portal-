@@ -272,23 +272,6 @@ const SubOfficialDashboard = () => {
                                                     )}
                                                 </div>
                                             )}
-                                            {/* Video Links */}
-                                            {g.hearingLink && g.status !== 'RESOLVED' && g.status !== 'REJECTED' && (
-                                                <div className="flex items-center space-x-2 mt-1">
-                                                    <span className="text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-black border border-orange-200">
-                                                        HEARING: {g.hearingDate}
-                                                    </span>
-                                                    <a href={g.hearingLink} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 underline font-black hover:text-blue-800">JOIN VC</a>
-                                                </div>
-                                            )}
-                                            {g.vcMeetingLink && !['SATISFIED_POST_VC_SO', 'CLOSED_HIGHER_W_VC'].includes(g.satisfactionStatus) && (
-                                                <div className="flex items-center space-x-2 mt-1">
-                                                    <span className="text-[9px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-black border border-indigo-200">
-                                                        SAT-VC: {new Date(g.vcScheduledDate).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
-                                                    </span>
-                                                    <a href={g.vcMeetingLink} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-600 underline font-black hover:text-blue-800">JOIN</a>
-                                                </div>
-                                            )}
                                             {g.directorNote && (
                                                 <div className="mt-2 bg-yellow-50 text-yellow-800 p-2 rounded text-xs border border-yellow-100">
                                                     <strong>Authority Instruction:</strong> {g.directorNote}

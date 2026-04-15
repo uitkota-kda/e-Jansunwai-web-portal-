@@ -155,7 +155,7 @@ const CommissionerDashboard = () => {
                         <div className="bg-green-50 p-2 rounded-lg"><CheckCircle className="w-5 h-5 text-green-600" /></div>
                     </div>
                     <div className="mt-4 flex items-center text-sm text-green-600 font-bold">
-                        <span className="bg-green-50 px-2 py-1 rounded text-xs">Target: >85%</span>
+                        <span className="bg-green-50 px-2 py-1 rounded text-xs">Target: &gt;85%</span>
                     </div>
                 </div>
 
@@ -185,7 +185,7 @@ const CommissionerDashboard = () => {
                         <div className="bg-red-50 p-2 rounded-lg"><AlertTriangle className="w-5 h-5 text-red-600" /></div>
                     </div>
                     <div className="mt-4 flex items-center text-sm text-red-600 font-bold">
-                        <span className="bg-red-50 px-2 py-1 rounded text-xs">> 7 Days Overdue</span>
+                        <span className="bg-red-50 px-2 py-1 rounded text-xs">&gt; 7 Days Overdue</span>
                     </div>
                 </div>
             </div>

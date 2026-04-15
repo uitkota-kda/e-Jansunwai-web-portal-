@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageCircle, Search, FileText, ArrowRight, HelpCircle, Phone, Globe } from 'lucide-react';
+import { MessageCircle, Search, FileText, ArrowRight, HelpCircle, Mail, Globe } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const ServiceCard = ({ icon: Icon, title, description, to, color, onClick }) => (
@@ -48,18 +48,22 @@ const LandingPage = () => {
                         Citizen Services Portal
                     </span>
                     <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
-                        <span className="text-kota-200">We are here to</span> <span className="text-white">Heal & Help</span>.
+                        <span className="text-kota-200">KDA Physical</span> <span className="text-white">Jansunwai</span>.
                     </h1>
                     <p className="text-lg text-slate-300 mb-8 leading-relaxed">
-                        Welcome to the Kota Development Authority's public grievance redressal system.
-                        Efficient, transparent, and bound by time.
+                        Official grievance registration portal for the Kota Development Authority.
+                        Register your complaints physically at the KDA counter and track them here.
                     </p>
 
                     <div className="bg-white/10 p-1.5 rounded-xl inline-flex backdrop-blur-md border border-white/20 w-full max-w-md">
                         <input
                             type="text"
                             value={trackId}
-                            onChange={(e) => setTrackId(e.target.value)}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                if (/^\d+$/.test(val) && val.length > 10) return;
+                                setTrackId(val);
+                            }}
                             onKeyDown={(e) => e.key === 'Enter' && handleTrack()}
                             placeholder="Enter Grievance Reference No."
                             className="bg-transparent text-white placeholder-slate-400 outline-none px-4 py-2 w-full"
@@ -73,6 +77,7 @@ const LandingPage = () => {
                     </div>
                 </div>
             </div>
+            {/* Process Info */}
 
             {/* Quick Services Grid */}
             <div>
@@ -80,13 +85,6 @@ const LandingPage = () => {
                     <Globe className="w-6 h-6 mr-3 text-kota-600" /> Online Services
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <ServiceCard
-                        title="File New Grievance"
-                        description="Submit a new complaint regarding Sanitation, Lighting, Engineering, or other civic issues."
-                        icon={FileText}
-                        to="/submit"
-                        color={{ bg: 'bg-blue-50', text: 'text-blue-600' }}
-                    />
                     <ServiceCard
                         title="Quick Status Track"
                         description="Check the real-time progress of your submitted application using your reference ID."
@@ -102,10 +100,10 @@ const LandingPage = () => {
                         color={{ bg: 'bg-purple-50', text: 'text-purple-600' }}
                     />
                     <ServiceCard
-                        title="Contact Control Room"
-                        description="Emergency contact numbers and helpline for urgent civic issues."
-                        icon={Phone}
-                        color={{ bg: 'bg-orange-50', text: 'text-orange-600' }}
+                        title="Official Support Email"
+                        description="For any technical issues or inquiries, please email us at UIT.KOTA@RAJASTHAN.GOV.IN"
+                        icon={Mail}
+                        color={{ bg: 'bg-blue-50', text: 'text-blue-600' }}
                     />
                 </div>
             </div>
@@ -117,11 +115,11 @@ const LandingPage = () => {
                     <h3 className="text-2xl font-bold text-gray-900 mb-4">How it works?</h3>
                     <ul className="space-y-4">
                         {[
-                            'Submit grievance via Web Portal.',
-                            'Receive a unique Tracking ID instantly.',
+                            'Visit the KDA Physical Counter.',
+                            'Register your grievance with the Operator.',
+                            'Receive a unique Tracking ID and WhatsApp notification.',
                             'Concerned Officer files action taken report within 7 days.',
-                            'If not resolved, auto-escalation to senior officials.',
-                            'Option for Video Hearing if unsatisfied with resolution.'
+                            'Track real-time progress using your Reference ID.',
                         ].map((step, i) => (
                             <li key={i} className="flex items-start">
                                 <div className="bg-white border border-gray-200 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-gray-500 mr-3 mt-0.5 shadow-sm">

@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import PublicLayout from './components/layout/PublicLayout';
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -17,14 +18,13 @@ import { useAuth } from './context/AuthContext';
 
 import GrievancesPage from './pages/admin/GrievancesPage';
 import OfficersPage from './pages/admin/OfficersPage';
-import VCHearingsPage from './pages/admin/VCHearingsPage';
 import ReportsPage from './pages/admin/ReportsPage';
 import SettingsPage from './pages/admin/SettingsPage';
-import VideoHearingPage from './pages/VideoHearingPage';
 import OperatorGrievanceForm from './pages/operator/OperatorGrievanceForm';
 import UserManagementPage from './pages/admin/UserManagementPage';
 import SubOfficialDashboard from './pages/officer/SubOfficialDashboard';
 import CommissionerDashboard from './pages/commissioner/CommissionerDashboard';
+import GuidelinesPage from './pages/GuidelinesPage';
 
 const DashboardRouter = () => {
   const { user, loading } = useAuth();
@@ -68,13 +68,14 @@ function App() {
           {/* Public Routes */}
           <Route element={<PublicLayout />}>
             <Route path="/" element={<LandingPage />} />
-            <Route path="/submit" element={<GrievanceOtpLogin />} />
-            <Route path="/register-grievance" element={<GrievanceForm />} />
+            {/* Public registration disabled - Physical only */}
+            {/* <Route path="/submit" element={<GrievanceOtpLogin />} /> */}
+            {/* <Route path="/register-grievance" element={<GrievanceForm />} /> */}
             <Route path="/track" element={<TrackingPage />} />
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/guidelines" element={<GuidelinesPage />} />
+            <Route path="/login" element={<LoginPage key="officer-login" />} />
+            <Route path="/operator-login" element={<LoginPage defaultRole="OPERATORS" key="operator-login" />} />
           </Route>
-
-          <Route path="/hearing/:roomId" element={<VideoHearingPage />} />
 
           {/* Protected Dashboard Routes */}
           <Route element={<ProtectedRoute allowedRoles={[
@@ -88,7 +89,6 @@ function App() {
 
               <Route path="submit-grievance" element={<OperatorGrievanceForm />} />
               <Route path="officers" element={<OfficersPage />} />
-              <Route path="hearings" element={<VCHearingsPage />} />
               <Route path="reports" element={<ReportsPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="users" element={<UserManagementPage />} />

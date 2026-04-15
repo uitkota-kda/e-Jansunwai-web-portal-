@@ -12,16 +12,16 @@ const Footer = () => {
                         <div className="flex items-center space-x-3">
                             <img src="/logo.png" alt="KDA Logo" className="h-12 w-auto object-contain bg-white rounded-lg p-1" />
                             <div>
-                                <h3 className="font-display font-bold text-xl leading-none">Kota Development</h3>
-                                <p className="text-xs text-slate-400 font-medium tracking-widest uppercase mt-0.5">Authority</p>
+                                <h3 className="font-display font-bold text-xl leading-none !text-white">Kota Development</h3>
+                                <p className="text-xs !text-white/80 font-medium tracking-widest uppercase mt-0.5">Authority</p>
                             </div>
                         </div>
-                        <p className="text-slate-400 text-sm leading-relaxed">
+                        <p className="text-white/70 text-sm leading-relaxed">
                             Committed to sustainable urban development and providing efficient civic services to the citizens of Kota.
                         </p>
                         <div className="flex space-x-4 pt-2">
                             {[Facebook, Twitter, Instagram].map((Icon, i) => (
-                                <a key={i} href="#" className="p-2 bg-slate-800 rounded-lg hover:bg-kota-600 hover:text-white text-slate-400 transition-all duration-300 hover:-translate-y-1">
+                                <a key={i} href="#" className="p-2 bg-white/10 rounded-lg hover:bg-kota-600 hover:text-white text-white/60 transition-all duration-300 hover:-translate-y-1">
                                     <Icon className="w-4 h-4" />
                                 </a>
                             ))}
@@ -30,23 +30,30 @@ const Footer = () => {
 
                     {/* Quick Links */}
                     <div>
-                        <h4 className="font-bold text-lg mb-6 flex items-center">
+                        <h4 className="font-bold text-lg mb-6 flex items-center !text-white">
                             <span className="w-8 h-1 bg-kota-500 rounded-full mr-3"></span>
                             Quick Links
                         </h4>
-                        <ul className="space-y-3 text-sm text-slate-400">
+                        <ul className="space-y-3 text-sm text-white/80">
                             {[
                                 { name: 'Home', path: '/' },
-                                { name: 'Submit Grievance', path: '/submit' },
                                 { name: 'Track Status', path: '/track' },
                                 { name: 'Officer Login', path: '/login' },
-                                { name: 'RTI Information', path: '#' }
+                                { name: 'Operator Login', path: '/operator-login' },
+                                { name: 'KDA Website', path: 'https://kda.rajasthan.gov.in/', external: true }
                             ].map((link) => (
                                 <li key={link.name}>
-                                    <Link to={link.path} className="hover:text-kota-400 flex items-center group transition-colors">
-                                        <ExternalLink className="w-3 h-3 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        {link.name}
-                                    </Link>
+                                    {link.external ? (
+                                        <a href={link.path} target="_blank" rel="noopener noreferrer" className="hover:text-white flex items-center group transition-colors">
+                                            <ExternalLink className="w-3 h-3 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            {link.name}
+                                        </a>
+                                    ) : (
+                                        <Link to={link.path} className="hover:text-white flex items-center group transition-colors">
+                                            <ExternalLink className="w-3 h-3 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            {link.name}
+                                        </Link>
+                                    )}
                                 </li>
                             ))}
                         </ul>
@@ -54,26 +61,26 @@ const Footer = () => {
 
                     {/* Contact Info */}
                     <div>
-                        <h4 className="font-bold text-lg mb-6 flex items-center">
+                        <h4 className="font-bold text-lg mb-6 flex items-center !text-white">
                             <span className="w-8 h-1 bg-kota-500 rounded-full mr-3"></span>
                             Contact Us
                         </h4>
-                        <ul className="space-y-4 text-sm text-slate-400">
+                        <ul className="space-y-4 text-sm text-white/80">
                             <li className="flex items-start">
                                 <MapPin className="w-5 h-5 mr-3 text-kota-500 shrink-0" />
-                                <span>Cad Circle, Dadabari,<br />Kota, Rajasthan 324009</span>
+                                <span>Kota Development Authority (KDA) <br /> Cad Circle, Dadabari,<br />Kota, Rajasthan 324009</span>
                             </li>
 
                             <li className="flex items-center">
                                 <Mail className="w-5 h-5 mr-3 text-kota-500 shrink-0" />
-                                <span>helpdesk@kda.rajasthan.gov.in</span>
+                                <span> UIT.KOTA@RAJASTHAN.GOV.IN </span>
                             </li>
                         </ul>
                     </div>
 
                     {/* Map / Newsletter */}
                     <div>
-                        <h4 className="font-bold text-lg mb-6 flex items-center">
+                        <h4 className="font-bold text-lg mb-6 flex items-center !text-white">
                             <span className="w-8 h-1 bg-kota-500 rounded-full mr-3"></span>
                             Locate Us
                         </h4>
@@ -94,7 +101,7 @@ const Footer = () => {
                 <div className="border-t border-slate-800 pt-8 mt-8 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500">
                     <p>&copy; {new Date().getFullYear()} Kota Development Authority. All Rights Reserved.</p>
                     <div className="flex items-center mt-4 md:mt-0 space-x-6">
-                        <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+                        <a href="https://kda.rajasthan.gov.in/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">KDA Website</a>
                         <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
                         <span className="flex items-center text-slate-600">
                             Made with <Heart className="w-3 h-3 mx-1 text-red-500 animate-pulse" /> for Citizens

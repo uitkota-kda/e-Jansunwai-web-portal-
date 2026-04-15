@@ -25,8 +25,6 @@ const Sidebar = () => {
     if (user?.role === 'MODERATOR') {
         menuItems.push(
             { name: 'Grievances', icon: FileText, path: '/dashboard/grievances' },
-            { name: 'Officers', icon: Users, path: '/dashboard/officers' },
-            { name: 'VC Hearings', icon: Video, path: '/dashboard/hearings' },
             { name: 'Reports', icon: FileText, path: '/dashboard/reports' }
         );
     }
